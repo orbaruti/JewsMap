@@ -51,8 +51,12 @@
   const adminLink = document.getElementById("admin-link");
   const signoutBtn = document.getElementById("signout-btn");
   const contributeSection = document.getElementById("contribute-section");
+  const detailView = document.getElementById("detail-view");
+  const editToggleBtn = document.getElementById("edit-toggle-btn");
+  const editCancelBtn = document.getElementById("edit-cancel-btn");
 
   let authMenuOpen = false;
+  let editMode = false;
 
   function updateAuthUI(user, profile) {
     if (user && profile) {
@@ -70,7 +74,7 @@
       adminLink.style.display = 'none';
     }
     closeAuthMenu();
-    updateContributeVisibility();
+    updateEditToggleVisibility();
   }
 
   function toggleAuthMenu() {
@@ -100,11 +104,28 @@
 
   document.addEventListener("click", () => closeAuthMenu());
 
-  function updateContributeVisibility() {
-    if (contributeSection) {
-      contributeSection.style.display = auth.isLoggedIn() ? '' : 'none';
-    }
+  function updateEditToggleVisibility() {
+    editToggleBtn.style.display = auth.isLoggedIn() ? '' : 'none';
   }
+
+  function enterEditMode() {
+    editMode = true;
+    detailView.style.display = 'none';
+    contributeSection.style.display = '';
+    editToggleBtn.style.display = 'none';
+    if (currentDetailPerson) prefillContributeForm(currentDetailPerson);
+  }
+
+  function exitEditMode() {
+    editMode = false;
+    detailView.style.display = '';
+    contributeSection.style.display = 'none';
+    updateEditToggleVisibility();
+    document.getElementById("contrib-status").textContent = '';
+  }
+
+  editToggleBtn.addEventListener("click", enterEditMode);
+  editCancelBtn.addEventListener("click", exitEditMode);
 
   // ── Render Era Sections ────────────────────────────────
 
@@ -463,8 +484,7 @@
     document.querySelector('.detail-tab[data-tab="summary"]').classList.add("active");
     summaryPane.classList.add("active");
 
-    prefillContributeForm(person);
-    updateContributeVisibility();
+    exitEditMode();
 
     detailBackdrop.classList.add("open");
     detailPanel.classList.add("open");
@@ -477,6 +497,7 @@
     document.body.style.overflow = "";
     currentDetailEra = null;
     currentDetailPerson = null;
+    exitEditMode();
   }
 
   detailClose.addEventListener("click", closeDetail);
@@ -570,6 +591,7 @@
 
       statusEl.textContent = "נשלח בהצלחה! ממתין לאישור מנהל.";
       statusEl.className = "contrib-status success";
+      setTimeout(() => exitEditMode(), 1500);
     } catch (err) {
       console.error("Submit error:", err);
       statusEl.textContent = "שגיאה בשליחה: " + (err.message || err);

@@ -705,20 +705,59 @@ body::after {
 .admin-link { color: var(--accent-light); font-weight: 600; }
 .signout-btn { color: #c45; }
 
-/* ============ CONTRIBUTE SECTION ============ */
-.contribute-section { margin-top: 24px; }
-.contribute-divider {
-  height: 1px;
-  background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+/* ============ EDIT TOGGLE BUTTON ============ */
+.edit-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 0;
   margin-bottom: 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  background: none;
+  border: 1px dashed var(--gold-dim);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.edit-toggle-btn:hover {
+  background: rgba(198,166,100,0.08);
+  border-color: var(--gold);
+}
+.edit-toggle-btn svg { stroke: var(--gold); }
+
+/* ============ CONTRIBUTE SECTION ============ */
+.contribute-section { margin-top: 0; }
+.contribute-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--card-border);
 }
 .contribute-title {
   font-family: var(--font-display);
   font-size: 18px;
   color: var(--gold);
-  text-align: center;
-  margin-bottom: 14px;
+  margin: 0;
 }
+.edit-cancel-btn {
+  padding: 5px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.edit-cancel-btn:hover { border-color: var(--text-muted); color: var(--text); }
 .contribute-tabs {
   display: flex;
   border-bottom: 1px solid var(--card-border);

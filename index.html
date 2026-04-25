@@ -106,32 +106,44 @@
       <span id="detail-years-ce" class="detail-years-ce"></span>
     </div>
     <div id="detail-badge" class="detail-badge"></div>
-    <div class="detail-tabs">
-      <button class="detail-tab active" data-tab="summary">סיכום</button>
-      <button class="detail-tab" data-tab="midrash">מדרש</button>
-      <button class="detail-tab" data-tab="sources">מקורות</button>
-      <button class="detail-tab" data-tab="notes">הערות</button>
-    </div>
-    <div class="detail-tab-content">
-      <div id="tab-summary" class="tab-pane active">
-        <p class="tab-placeholder">תוכן הסיכום יתמלא בהמשך...</p>
+
+    <!-- Edit Toggle Button (visible when logged in) -->
+    <button id="edit-toggle-btn" class="edit-toggle-btn" style="display:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>ערוך מידע</span>
+    </button>
+
+    <!-- READ-ONLY VIEW -->
+    <div id="detail-view" class="detail-view">
+      <div class="detail-tabs">
+        <button class="detail-tab active" data-tab="summary">סיכום</button>
+        <button class="detail-tab" data-tab="midrash">מדרש</button>
+        <button class="detail-tab" data-tab="sources">מקורות</button>
+        <button class="detail-tab" data-tab="notes">הערות</button>
       </div>
-      <div id="tab-midrash" class="tab-pane">
-        <p class="tab-placeholder">תוכן המדרש יתמלא בהמשך...</p>
-      </div>
-      <div id="tab-sources" class="tab-pane">
-        <p class="tab-placeholder">מקורות יתמלאו בהמשך...</p>
-      </div>
-      <div id="tab-notes" class="tab-pane">
-        <div id="notes-list"></div>
-        <p id="notes-placeholder" class="tab-placeholder">הערות יתמלאו בהמשך...</p>
+      <div class="detail-tab-content">
+        <div id="tab-summary" class="tab-pane active">
+          <p class="tab-placeholder">תוכן הסיכום יתמלא בהמשך...</p>
+        </div>
+        <div id="tab-midrash" class="tab-pane">
+          <p class="tab-placeholder">תוכן המדרש יתמלא בהמשך...</p>
+        </div>
+        <div id="tab-sources" class="tab-pane">
+          <p class="tab-placeholder">מקורות יתמלאו בהמשך...</p>
+        </div>
+        <div id="tab-notes" class="tab-pane">
+          <div id="notes-list"></div>
+          <p id="notes-placeholder" class="tab-placeholder">הערות יתמלאו בהמשך...</p>
+        </div>
       </div>
     </div>
 
-    <!-- Contribute Section (visible when logged in) -->
+    <!-- EDIT MODE (hidden by default) -->
     <div id="contribute-section" class="contribute-section" style="display:none;">
-      <div class="contribute-divider"></div>
-      <h3 class="contribute-title">תרום מידע</h3>
+      <div class="contribute-header">
+        <h3 class="contribute-title">עריכת מידע</h3>
+        <button id="edit-cancel-btn" class="edit-cancel-btn">ביטול</button>
+      </div>
 
       <div id="contribute-form" class="contribute-form">
         <div class="contribute-tabs">
@@ -140,7 +152,6 @@
           <button class="contrib-tab" data-ctype="add_note">הערה</button>
         </div>
 
-        <!-- Edit Person Fields -->
         <div id="contrib-edit" class="contrib-pane active">
           <label class="contrib-label">סיכום</label>
           <textarea id="contrib-summary" class="contrib-input" rows="3" placeholder="הוסף או ערוך סיכום..."></textarea>
@@ -150,13 +161,11 @@
           <input id="contrib-title" class="contrib-input" type="text" placeholder="לדוגמה: צדיק, נביא...">
         </div>
 
-        <!-- Add Source -->
         <div id="contrib-source" class="contrib-pane">
           <label class="contrib-label">מקור חדש</label>
           <textarea id="contrib-source-text" class="contrib-input" rows="4" placeholder="הוסף מקור או הפניה..."></textarea>
         </div>
 
-        <!-- Add Note -->
         <div id="contrib-note" class="contrib-pane">
           <label class="contrib-label">הערה</label>
           <textarea id="contrib-note-text" class="contrib-input" rows="4" placeholder="הוסף הערה, תובנה..."></textarea>
