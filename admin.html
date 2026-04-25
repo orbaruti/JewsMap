@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול — סדר הדורות</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700&family=Heebo:wght@300;400;600&family=Secular+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <div id="admin-gate" class="admin-gate">
+    <div class="gate-content">
+      <h1 class="gate-title">ניהול סדר הדורות</h1>
+      <p class="gate-text" id="gate-text">בודק הרשאות...</p>
+      <button id="gate-login-btn" class="gate-btn" style="display:none;">התחבר עם Google</button>
+      <a href="index.html" class="gate-back">חזרה לאתר</a>
+    </div>
+  </div>
+
+  <div id="admin-app" class="admin-app" style="display:none;">
+    <header class="admin-header">
+      <div class="admin-header-right">
+        <h1 class="admin-logo">ניהול</h1>
+        <a href="index.html" class="admin-back-link">חזרה לאתר</a>
+      </div>
+      <div class="admin-header-left">
+        <span id="admin-user-name" class="admin-user-name"></span>
+        <button id="admin-signout" class="admin-signout-btn">התנתק</button>
+      </div>
+    </header>
+
+    <div class="admin-toolbar">
+      <div class="admin-filters">
+        <label class="filter-label">סטטוס:</label>
+        <select id="filter-status" class="filter-select">
+          <option value="pending">ממתין</option>
+          <option value="approved">אושר</option>
+          <option value="rejected">נדחה</option>
+          <option value="all">הכל</option>
+        </select>
+
+        <label class="filter-label">סוג:</label>
+        <select id="filter-type" class="filter-select">
+          <option value="all">הכל</option>
+          <option value="new_person">אדם חדש</option>
+          <option value="edit_person">עריכת אדם</option>
+          <option value="add_source">מקור</option>
+          <option value="add_note">הערה</option>
+        </select>
+      </div>
+      <div id="admin-stats" class="admin-stats"></div>
+    </div>
+
+    <div id="submissions-list" class="submissions-list">
+      <p class="loading-text">טוען...</p>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="modal" class="modal">
+      <button id="modal-close" class="modal-close">&times;</button>
+      <div id="modal-body" class="modal-body"></div>
+      <div class="modal-actions">
+        <textarea id="modal-admin-note" class="modal-note" placeholder="הערת מנהל (אופציונלי)..." rows="2"></textarea>
+        <div class="modal-btns">
+          <button id="modal-approve" class="modal-btn approve">אשר</button>
+          <button id="modal-reject" class="modal-btn reject">דחה</button>
+        </div>
+        <div id="modal-status" class="modal-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

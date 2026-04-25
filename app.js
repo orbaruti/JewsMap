@@ -2,6 +2,11 @@
   "use strict";
 
   const ERAS = window.ERAS_DATA;
+  const auth = window.JewsMapAuth;
+  const subs = window.JewsMapSubmissions;
+
+  let currentDetailEra = null;
+  let currentDetailPerson = null;
 
   // ── Helpers ──────────────────────────────────────────────
 
@@ -37,102 +42,179 @@
     </svg>`;
   }
 
+  // ── Auth UI ─────────────────────────────────────────────
+
+  const authBtn = document.getElementById("auth-btn");
+  const authLabel = document.getElementById("auth-label");
+  const authMenu = document.getElementById("auth-menu");
+  const authUserInfo = document.getElementById("auth-user-info");
+  const adminLink = document.getElementById("admin-link");
+  const signoutBtn = document.getElementById("signout-btn");
+  const contributeSection = document.getElementById("contribute-section");
+
+  let authMenuOpen = false;
+
+  function updateAuthUI(user, profile) {
+    if (user && profile) {
+      const avatar = profile.avatar_url;
+      if (avatar) {
+        authBtn.innerHTML = `<img src="${avatar}" class="auth-avatar-img" alt="" referrerpolicy="no-referrer"><span id="auth-label" class="auth-name">${profile.display_name || 'משתמש'}</span>`;
+      } else {
+        authLabel.textContent = profile.display_name || profile.email;
+      }
+      authBtn.classList.add("logged-in");
+      adminLink.style.display = auth.isAdmin() ? '' : 'none';
+    } else {
+      authBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span id="auth-label">התחבר</span>`;
+      authBtn.classList.remove("logged-in");
+      adminLink.style.display = 'none';
+    }
+    closeAuthMenu();
+    updateContributeVisibility();
+  }
+
+  function toggleAuthMenu() {
+    authMenuOpen = !authMenuOpen;
+    authMenu.classList.toggle("open", authMenuOpen);
+  }
+
+  function closeAuthMenu() {
+    authMenuOpen = false;
+    authMenu.classList.remove("open");
+  }
+
+  authBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (auth.isLoggedIn()) {
+      toggleAuthMenu();
+    } else {
+      auth.signInWithGoogle();
+    }
+  });
+
+  signoutBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    auth.signOut();
+    closeAuthMenu();
+  });
+
+  document.addEventListener("click", () => closeAuthMenu());
+
+  function updateContributeVisibility() {
+    if (contributeSection) {
+      contributeSection.style.display = auth.isLoggedIn() ? '' : 'none';
+    }
+  }
+
   // ── Render Era Sections ────────────────────────────────
 
   const erasContainer = document.getElementById("eras-container");
   const eraElements = [];
 
-  ERAS.forEach((era, eraIdx) => {
-    const section = document.createElement("section");
-    section.className = "era-section";
-    section.id = "era-" + eraIdx;
-    section.dataset.startYear = era.startYear;
-    section.dataset.endYear = era.endYear;
+  function renderEras() {
+    erasContainer.innerHTML = '';
+    eraElements.length = 0;
 
-    const header = document.createElement("div");
-    header.className = "era-header";
-    header.innerHTML = `
-      <div class="era-ornament"></div>
-      <h2 class="era-title-he">${era.nameHe}</h2>
-      <p class="era-title-en">${era.nameEn}</p>
-    `;
-    section.appendChild(header);
+    ERAS.forEach((era, eraIdx) => {
+      const section = document.createElement("section");
+      section.className = "era-section";
+      section.id = "era-" + eraIdx;
+      section.dataset.startYear = era.startYear;
+      section.dataset.endYear = era.endYear;
 
-    const personsWrap = document.createElement("div");
-    personsWrap.className = "era-persons";
+      const header = document.createElement("div");
+      header.className = "era-header";
+      header.innerHTML = `
+        <div class="era-ornament"></div>
+        <h2 class="era-title-he">${era.nameHe}</h2>
+        <p class="era-title-en">${era.nameEn}</p>
+      `;
+      section.appendChild(header);
 
-    era.persons.forEach((person, pIdx) => {
-      const card = document.createElement("div");
-      card.className = "person-card " + (pIdx % 2 === 0 ? "side-right" : "side-left");
-      card.setAttribute("role", "button");
-      card.setAttribute("tabindex", "0");
-      card.dataset.personId = person.id;
-      card.dataset.eraIdx = eraIdx;
-      card.dataset.personIdx = pIdx;
+      const personsWrap = document.createElement("div");
+      personsWrap.className = "era-persons";
 
-      const birthStr = person.birthYear != null ? person.birthYear : "?";
-      const deathStr = person.deathYear != null ? person.deathYear : "?";
-      const ceStr = hebrewToCE(person.birthYear) + " – " + hebrewToCE(person.deathYear);
+      era.persons.forEach((person, pIdx) => {
+        const card = document.createElement("div");
+        card.className = "person-card " + (pIdx % 2 === 0 ? "side-right" : "side-left");
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.dataset.personId = person.id;
+        card.dataset.eraIdx = eraIdx;
+        card.dataset.personIdx = pIdx;
 
-      let badgeHTML = "";
-      if (person.title) {
-        const bc = getBadgeClass(person.title);
-        badgeHTML = `<span class="card-badge ${bc}">${person.title}</span>`;
+        const birthStr = person.birthYear != null ? person.birthYear : "?";
+        const deathStr = person.deathYear != null ? person.deathYear : "?";
+        const ceStr = hebrewToCE(person.birthYear) + " – " + hebrewToCE(person.deathYear);
+
+        let badgeHTML = "";
+        if (person.title) {
+          const bc = getBadgeClass(person.title);
+          badgeHTML = `<span class="card-badge ${bc}">${person.title}</span>`;
+        }
+
+        card.innerHTML = `
+          <div class="card-avatar">${personAvatarSVG()}</div>
+          <div class="card-name">${person.nameHe}</div>
+          <div class="card-years">${birthStr} – ${deathStr}</div>
+          <div class="card-years-ce">${ceStr}</div>
+          ${badgeHTML}
+        `;
+
+        card.addEventListener("click", () => openDetail(era, person));
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(era, person); }
+        });
+        personsWrap.appendChild(card);
+      });
+
+      section.appendChild(personsWrap);
+
+      if (era.events && era.events.length > 0) {
+        const eventsWrap = document.createElement("div");
+        eventsWrap.className = "era-events";
+        era.events.forEach((evt) => {
+          const marker = document.createElement("div");
+          marker.className = "event-marker";
+          marker.innerHTML = `
+            <span class="event-year">${evt.year}</span>
+            <span>${evt.descHe}</span>
+          `;
+          eventsWrap.appendChild(marker);
+        });
+        section.appendChild(eventsWrap);
       }
 
-      card.innerHTML = `
-        <div class="card-avatar">${personAvatarSVG()}</div>
-        <div class="card-name">${person.nameHe}</div>
-        <div class="card-years">${birthStr} – ${deathStr}</div>
-        <div class="card-years-ce">${ceStr}</div>
-        ${badgeHTML}
-      `;
-
-      card.addEventListener("click", () => openDetail(era, person));
-      card.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(era, person); }
-      });
-      personsWrap.appendChild(card);
+      erasContainer.appendChild(section);
+      eraElements.push(section);
     });
 
-    section.appendChild(personsWrap);
-
-    if (era.events && era.events.length > 0) {
-      const eventsWrap = document.createElement("div");
-      eventsWrap.className = "era-events";
-      era.events.forEach((evt) => {
-        const marker = document.createElement("div");
-        marker.className = "event-marker";
-        marker.innerHTML = `
-          <span class="event-year">${evt.year}</span>
-          <span>${evt.descHe}</span>
-        `;
-        eventsWrap.appendChild(marker);
-      });
-      section.appendChild(eventsWrap);
-    }
-
-    erasContainer.appendChild(section);
-    eraElements.push(section);
-  });
+    buildEraNav();
+    buildTimelineMarks();
+    updateOnScroll();
+    setTimeout(drawTree, 300);
+  }
 
   // ── Era Navigation Dots ────────────────────────────────
 
   const eraNav = document.getElementById("era-nav");
+  let eraDots = [];
 
-  ERAS.forEach((era, idx) => {
-    const dot = document.createElement("button");
-    dot.className = "era-dot";
-    dot.dataset.eraIdx = idx;
-    dot.innerHTML = `<span class="era-dot-tooltip">${era.nameHe}</span>`;
-    dot.addEventListener("click", () => {
-      const el = document.getElementById("era-" + idx);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  function buildEraNav() {
+    eraNav.innerHTML = '';
+    ERAS.forEach((era, idx) => {
+      const dot = document.createElement("button");
+      dot.className = "era-dot";
+      dot.dataset.eraIdx = idx;
+      dot.innerHTML = `<span class="era-dot-tooltip">${era.nameHe}</span>`;
+      dot.addEventListener("click", () => {
+        const el = document.getElementById("era-" + idx);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      eraNav.appendChild(dot);
     });
-    eraNav.appendChild(dot);
-  });
-
-  const eraDots = eraNav.querySelectorAll(".era-dot");
+    eraDots = eraNav.querySelectorAll(".era-dot");
+  }
 
   // ── Timeline Sidebar ───────────────────────────────────
 
@@ -173,7 +255,6 @@
     });
   }
 
-  buildTimelineMarks();
   window.addEventListener("resize", buildTimelineMarks);
 
   // ── Scroll-Driven Updates ──────────────────────────────
@@ -247,8 +328,6 @@
     }
   });
 
-  updateOnScroll();
-
   // ── SVG Tree Trunk & Branches ──────────────────────────
 
   const treeSvg = document.getElementById("tree-svg");
@@ -318,7 +397,6 @@
     });
   }
 
-  setTimeout(drawTree, 300);
   window.addEventListener("resize", () => setTimeout(drawTree, 100));
 
   // ── Detail Panel ───────────────────────────────────────
@@ -328,6 +406,9 @@
   const detailClose = document.getElementById("detail-close");
 
   function openDetail(era, person) {
+    currentDetailEra = era;
+    currentDetailPerson = person;
+
     document.getElementById("detail-name-he").textContent = person.nameHe;
     document.getElementById("detail-name-en").textContent = person.nameEn;
 
@@ -361,10 +442,29 @@
       ? `<p>${person.sources}</p>`
       : `<p class="tab-placeholder">מקורות יתמלאו בהמשך...</p>`;
 
+    const notesList = document.getElementById("notes-list");
+    const notesPlaceholder = document.getElementById("notes-placeholder");
+    notesList.innerHTML = '';
+    if (person.notes && person.notes.length > 0) {
+      notesPlaceholder.style.display = 'none';
+      person.notes.forEach(n => {
+        const div = document.createElement("div");
+        div.className = "note-item";
+        div.innerHTML = `<p class="note-text">${n.text}</p>
+          <span class="note-meta">${n.author || 'אנונימי'}</span>`;
+        notesList.appendChild(div);
+      });
+    } else {
+      notesPlaceholder.style.display = '';
+    }
+
     document.querySelectorAll(".detail-tab").forEach((t) => t.classList.remove("active"));
     document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
     document.querySelector('.detail-tab[data-tab="summary"]').classList.add("active");
     summaryPane.classList.add("active");
+
+    prefillContributeForm(person);
+    updateContributeVisibility();
 
     detailBackdrop.classList.add("open");
     detailPanel.classList.add("open");
@@ -375,6 +475,8 @@
     detailPanel.classList.remove("open");
     detailBackdrop.classList.remove("open");
     document.body.style.overflow = "";
+    currentDetailEra = null;
+    currentDetailPerson = null;
   }
 
   detailClose.addEventListener("click", closeDetail);
@@ -396,6 +498,87 @@
     }
   });
 
+  // ── Contribute Form ────────────────────────────────────
+
+  const contribTabs = document.querySelectorAll(".contrib-tab");
+  const contribPanes = document.querySelectorAll(".contrib-pane");
+  let activeContribType = "edit_person";
+
+  contribTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      contribTabs.forEach(t => t.classList.remove("active"));
+      contribPanes.forEach(p => p.classList.remove("active"));
+      tab.classList.add("active");
+      activeContribType = tab.dataset.ctype;
+
+      const paneMap = { edit_person: "contrib-edit", add_source: "contrib-source", add_note: "contrib-note" };
+      document.getElementById(paneMap[activeContribType]).classList.add("active");
+    });
+  });
+
+  function prefillContributeForm(person) {
+    document.getElementById("contrib-summary").value = person.summary || '';
+    document.getElementById("contrib-midrash").value = person.midrash || '';
+    document.getElementById("contrib-title").value = person.title || '';
+    document.getElementById("contrib-source-text").value = '';
+    document.getElementById("contrib-note-text").value = '';
+    document.getElementById("contrib-status").textContent = '';
+
+    contribTabs.forEach(t => t.classList.remove("active"));
+    contribPanes.forEach(p => p.classList.remove("active"));
+    contribTabs[0].classList.add("active");
+    document.getElementById("contrib-edit").classList.add("active");
+    activeContribType = "edit_person";
+  }
+
+  document.getElementById("contrib-submit").addEventListener("click", async () => {
+    if (!auth.isLoggedIn() || !currentDetailPerson || !currentDetailEra) return;
+
+    const statusEl = document.getElementById("contrib-status");
+    const btn = document.getElementById("contrib-submit");
+    btn.disabled = true;
+    statusEl.textContent = "שולח...";
+    statusEl.className = "contrib-status";
+
+    try {
+      if (activeContribType === "edit_person") {
+        const changes = {};
+        const summaryVal = document.getElementById("contrib-summary").value.trim();
+        const midrashVal = document.getElementById("contrib-midrash").value.trim();
+        const titleVal = document.getElementById("contrib-title").value.trim();
+
+        if (summaryVal !== (currentDetailPerson.summary || '')) changes.summary = summaryVal;
+        if (midrashVal !== (currentDetailPerson.midrash || '')) changes.midrash = midrashVal;
+        if (titleVal !== (currentDetailPerson.title || '')) changes.title = titleVal;
+
+        if (Object.keys(changes).length === 0) {
+          statusEl.textContent = "לא בוצעו שינויים";
+          statusEl.className = "contrib-status warn";
+          btn.disabled = false;
+          return;
+        }
+        await subs.submitEditPerson(currentDetailEra.id, currentDetailPerson.id, changes);
+      } else if (activeContribType === "add_source") {
+        const src = document.getElementById("contrib-source-text").value.trim();
+        if (!src) { statusEl.textContent = "יש למלא מקור"; statusEl.className = "contrib-status warn"; btn.disabled = false; return; }
+        await subs.submitSource(currentDetailEra.id, currentDetailPerson.id, src);
+      } else if (activeContribType === "add_note") {
+        const note = document.getElementById("contrib-note-text").value.trim();
+        if (!note) { statusEl.textContent = "יש למלא הערה"; statusEl.className = "contrib-status warn"; btn.disabled = false; return; }
+        await subs.submitNote(currentDetailEra.id, currentDetailPerson.id, note);
+      }
+
+      statusEl.textContent = "נשלח בהצלחה! ממתין לאישור מנהל.";
+      statusEl.className = "contrib-status success";
+    } catch (err) {
+      console.error("Submit error:", err);
+      statusEl.textContent = "שגיאה בשליחה: " + (err.message || err);
+      statusEl.className = "contrib-status error";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   // ── Search ─────────────────────────────────────────────
 
   const searchToggle = document.getElementById("search-toggle");
@@ -404,12 +587,16 @@
   const searchResults = document.getElementById("search-results");
   const searchCloseBtn = document.getElementById("search-close");
 
-  const allPersonsFlat = [];
-  ERAS.forEach((era, eraIdx) => {
-    era.persons.forEach((p, pIdx) => {
-      allPersonsFlat.push({ ...p, eraIdx, pIdx, era });
+  let allPersonsFlat = [];
+
+  function rebuildSearchIndex() {
+    allPersonsFlat = [];
+    ERAS.forEach((era, eraIdx) => {
+      era.persons.forEach((p, pIdx) => {
+        allPersonsFlat.push({ ...p, eraIdx, pIdx, era });
+      });
     });
-  });
+  }
 
   function openSearch() {
     searchOverlay.classList.add("open");
@@ -459,4 +646,31 @@
       searchResults.appendChild(item);
     });
   });
+
+  // ── Init: Auth + Merge Approved Content + Render ───────
+
+  async function initApp() {
+    try {
+      await auth.init();
+    } catch (e) {
+      console.warn("Auth init skipped (Supabase may not be configured):", e.message);
+    }
+
+    try {
+      const approved = await subs.fetchApprovedContent();
+      if (approved.length > 0) {
+        subs.mergeApprovedIntoEras(ERAS, approved);
+      }
+    } catch (e) {
+      console.warn("Could not fetch approved content:", e.message);
+    }
+
+    auth.onChange(updateAuthUI);
+    updateAuthUI(auth.currentUser, auth.currentProfile);
+
+    renderEras();
+    rebuildSearchIndex();
+  }
+
+  initApp();
 })();

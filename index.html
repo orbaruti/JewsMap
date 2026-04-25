@@ -18,6 +18,19 @@
     <span id="hud-ce-year" class="hud-year hud-year-ce"></span>
   </div>
 
+  <!-- Auth Button -->
+  <div id="auth-area" class="auth-area">
+    <button id="auth-btn" class="auth-btn" aria-label="התחברות">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="auth-label">התחבר</span>
+    </button>
+    <div id="auth-menu" class="auth-menu">
+      <div id="auth-user-info" class="auth-user-info"></div>
+      <a id="admin-link" href="admin.html" class="auth-menu-item admin-link" style="display:none;">ניהול</a>
+      <button id="signout-btn" class="auth-menu-item signout-btn">התנתק</button>
+    </div>
+  </div>
+
   <!-- Search Button -->
   <button id="search-toggle" class="search-toggle" aria-label="חיפוש">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
@@ -110,12 +123,56 @@
         <p class="tab-placeholder">מקורות יתמלאו בהמשך...</p>
       </div>
       <div id="tab-notes" class="tab-pane">
-        <p class="tab-placeholder">הערות יתמלאו בהמשך...</p>
+        <div id="notes-list"></div>
+        <p id="notes-placeholder" class="tab-placeholder">הערות יתמלאו בהמשך...</p>
+      </div>
+    </div>
+
+    <!-- Contribute Section (visible when logged in) -->
+    <div id="contribute-section" class="contribute-section" style="display:none;">
+      <div class="contribute-divider"></div>
+      <h3 class="contribute-title">תרום מידע</h3>
+
+      <div id="contribute-form" class="contribute-form">
+        <div class="contribute-tabs">
+          <button class="contrib-tab active" data-ctype="edit_person">עריכה</button>
+          <button class="contrib-tab" data-ctype="add_source">מקור</button>
+          <button class="contrib-tab" data-ctype="add_note">הערה</button>
+        </div>
+
+        <!-- Edit Person Fields -->
+        <div id="contrib-edit" class="contrib-pane active">
+          <label class="contrib-label">סיכום</label>
+          <textarea id="contrib-summary" class="contrib-input" rows="3" placeholder="הוסף או ערוך סיכום..."></textarea>
+          <label class="contrib-label">מדרש</label>
+          <textarea id="contrib-midrash" class="contrib-input" rows="3" placeholder="הוסף או ערוך מדרש..."></textarea>
+          <label class="contrib-label">תואר</label>
+          <input id="contrib-title" class="contrib-input" type="text" placeholder="לדוגמה: צדיק, נביא...">
+        </div>
+
+        <!-- Add Source -->
+        <div id="contrib-source" class="contrib-pane">
+          <label class="contrib-label">מקור חדש</label>
+          <textarea id="contrib-source-text" class="contrib-input" rows="4" placeholder="הוסף מקור או הפניה..."></textarea>
+        </div>
+
+        <!-- Add Note -->
+        <div id="contrib-note" class="contrib-pane">
+          <label class="contrib-label">הערה</label>
+          <textarea id="contrib-note-text" class="contrib-input" rows="4" placeholder="הוסף הערה, תובנה..."></textarea>
+        </div>
+
+        <button id="contrib-submit" class="contrib-submit-btn">שלח לאישור</button>
+        <div id="contrib-status" class="contrib-status"></div>
       </div>
     </div>
   </aside>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
   <script src="data.js"></script>
+  <script src="auth.js"></script>
+  <script src="submissions.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
