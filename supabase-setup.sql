@@ -51,9 +51,13 @@ alter table public.approved_content enable row level security;
 -- Row Level Security Policies
 -- ============================================================
 
--- Profiles: everyone can read, users can update their own
+-- Profiles: everyone can read, users can insert/update their own
 create policy "Profiles are viewable by everyone"
   on public.profiles for select using (true);
+
+create policy "Users can insert own profile"
+  on public.profiles for insert
+  with check (auth.uid() = id);
 
 create policy "Users can update own profile"
   on public.profiles for update using (auth.uid() = id);
