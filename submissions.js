@@ -3,19 +3,30 @@
 
   const auth = window.JewsMapAuth;
 
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms))
+    ]);
+  }
+
   window.JewsMapSubmissions = {
 
     async fetchApprovedContent() {
-      const { data, error } = await auth.supabase
-        .from('approved_content')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching approved content:', error.message);
+      try {
+        const { data, error } = await withTimeout(
+          auth.supabase.from('approved_content').select('*').order('created_at', { ascending: true }),
+          10000
+        );
+        if (error) {
+          console.error('Error fetching approved content:', error.message);
+          return [];
+        }
+        return data || [];
+      } catch (e) {
+        console.warn('Approved content fetch failed:', e.message);
         return [];
       }
-      return data || [];
     },
 
     mergeApprovedIntoEras(eras, approvedItems) {
@@ -60,60 +71,56 @@
 
     async submitNewPerson(eraId, personData) {
       if (!auth.isLoggedIn()) throw new Error('Must be logged in');
-      const { data, error } = await auth.supabase
-        .from('submissions')
-        .insert({
+      const { data, error } = await withTimeout(
+        auth.supabase.from('submissions').insert({
           user_id: auth.currentUser.id,
           type: 'new_person',
           era_id: eraId,
           person_id: personData.id,
           data: personData
-        })
-        .select()
-        .single();
+        }).select().single(),
+        10000
+      );
       if (error) throw error;
       return data;
     },
 
     async submitEditPerson(eraId, personId, changes) {
       if (!auth.isLoggedIn()) throw new Error('Must be logged in');
-      const { data, error } = await auth.supabase
-        .from('submissions')
-        .insert({
+      const { data, error } = await withTimeout(
+        auth.supabase.from('submissions').insert({
           user_id: auth.currentUser.id,
           type: 'edit_person',
           era_id: eraId,
           person_id: personId,
           data: changes
-        })
-        .select()
-        .single();
+        }).select().single(),
+        10000
+      );
       if (error) throw error;
       return data;
     },
 
     async submitSource(eraId, personId, sources) {
       if (!auth.isLoggedIn()) throw new Error('Must be logged in');
-      const { data, error } = await auth.supabase
-        .from('submissions')
-        .insert({
+      const { data, error } = await withTimeout(
+        auth.supabase.from('submissions').insert({
           user_id: auth.currentUser.id,
           type: 'add_source',
           era_id: eraId,
           person_id: personId,
           data: { sources }
-        })
-        .select()
-        .single();
+        }).select().single(),
+        10000
+      );
       if (error) throw error;
       return data;
     },
 
     async submitNote(eraId, personId, note) {
       if (!auth.isLoggedIn()) throw new Error('Must be logged in');
-      const { data, error } = await auth.supabase
-        .from('submissions')
-        .insert({
+      const { data, error } = await withTimeout(
+        auth.supabase.from('submissions').insert({
           user_id: auth.currentUser.id,
           type: 'add_note',
           era_id: eraId,
@@ -122,9 +129,9 @@
             note,
             authorName: auth.currentProfile?.display_name || ''
           }
-        })
-        .select()
-        .single();
+        }).select().single(),
+        10000
+      );
       if (error) throw error;
       return data;
     },
