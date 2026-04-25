@@ -19,9 +19,7 @@
     },
 
     async init() {
-      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
-      if (sessErr) console.warn('Session error:', sessErr.message);
-
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await this._setUser(session.user);
       }
@@ -40,43 +38,32 @@
     async _setUser(user) {
       this.currentUser = user;
 
-      const { data: profile, error: fetchErr } = await supabase
+      let { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (fetchErr) console.warn('Profile fetch:', fetchErr.message);
+      if (!profile) {
+        const meta = user.user_metadata || {};
+        const isAdmin = user.email === window.SUPABASE_CONFIG.adminEmail;
+        const { data: newProfile, error: insertErr } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            display_name: meta.full_name || meta.name || '',
+            avatar_url: meta.avatar_url || meta.picture || '',
+            role: isAdmin ? 'admin' : 'user'
+          }, { onConflict: 'id' })
+          .select()
+          .single();
 
-      if (profile) {
-        this.currentProfile = profile;
-        this._notify();
-        return;
+        if (insertErr) console.error('Profile upsert error:', insertErr.message);
+        profile = newProfile;
       }
 
-      const meta = user.user_metadata || {};
-      const isAdmin = user.email === window.SUPABASE_CONFIG.adminEmail;
-      const { data: newProfile, error: upsertErr } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          display_name: meta.full_name || meta.name || '',
-          avatar_url: meta.avatar_url || meta.picture || '',
-          role: isAdmin ? 'admin' : 'user'
-        }, { onConflict: 'id' })
-        .select()
-        .single();
-
-      if (upsertErr) console.warn('Profile upsert:', upsertErr.message);
-
-      this.currentProfile = newProfile || {
-        id: user.id,
-        email: user.email,
-        display_name: meta.full_name || meta.name || '',
-        avatar_url: meta.avatar_url || meta.picture || '',
-        role: isAdmin ? 'admin' : 'user'
-      };
+      this.currentProfile = profile;
       this._notify();
     },
 

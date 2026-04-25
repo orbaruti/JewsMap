@@ -307,6 +307,7 @@ window.ERAS_DATA = [
   endYear: 3979,
   persons: [
     { id: "rabban-gamliel-midia", nameHe: "רבן גמליאל השני דיבנה", nameEn: "Rabban Gamliel II of Yavneh", birthYear: 3833, deathYear: 3855, title: "Nasi", summary: "", midrash: "", sources: "", image: null },
+    { id: "rabbi-shimon-bar-yohai", nameHe: "רבי שמעון בר יוחאי", nameEn: "Rabbi Shimon bar Yohai", birthYear: 3860, deathYear: 3920, title: "Tanna", summary: "", midrash: "", sources: "", image: null },
     { id: "rabban-shimon-ben-gamliel-yavneh", nameHe: "רבן שמעון בן גמליאל", nameEn: "Rabban Shimon ben Gamliel", birthYear: 3880, deathYear: 3910, title: "Nasi", summary: "", midrash: "", sources: "", image: null },
     { id: "rabbi-yehuda-ha-nasi", nameHe: "רבי יהודה הנשיא", nameEn: "Rabbi Judah the Prince", birthYear: 3910, deathYear: 3979, title: "Nasi", summary: "", midrash: "", sources: "", image: null }
   ],
