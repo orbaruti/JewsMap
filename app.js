@@ -604,20 +604,23 @@
 
   document.querySelectorAll(".detail-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
+      if (tab.dataset.tab === "family" && currentDetailPerson) {
+        ftreeHistory = [];
+        openFamilyTreeWindow(currentDetailPerson, false);
+        return;
+      }
+
       document.querySelectorAll(".detail-tab").forEach((t) => t.classList.remove("active"));
       document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
       tab.classList.add("active");
       document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
-
-      if (tab.dataset.tab === "family" && currentDetailPerson) {
-        renderFamilyTree(currentDetailPerson);
-      }
     });
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (apModal.classList.contains("open")) closeAddPersonModal();
+      if (ftreeWindow.classList.contains("open")) closeFamilyTreeWindow();
+      else if (apModal.classList.contains("open")) closeAddPersonModal();
       else if (searchOverlay.classList.contains("open")) closeSearch();
       else if (detailPanel.classList.contains("open")) closeDetail();
     }
@@ -677,8 +680,9 @@
 
   // ── Family Tree Renderer (D3) ──────────────────────────
 
-  function renderFamilyTree(person) {
-    const container = document.getElementById("family-tree-container");
+  function renderFamilyTree(person, opts) {
+    const container = (opts && opts.container) || document.getElementById("family-tree-container");
+    const onNodeClick = (opts && opts.onNodeClick) || null;
     container.innerHTML = '';
 
     const treeData = buildFamilyTreeData(person);
@@ -744,9 +748,13 @@
       .attr("transform", d => `translate(${d.x - nodeW / 2}, ${d.y - nodeH / 2})`)
       .style("cursor", "pointer")
       .on("click", (event, d) => {
-        if (d.data._personId) {
-          const entry = findPersonById(d.data._personId);
-          if (entry) openDetail(entry.era, entry.person);
+        if (!d.data._personId) return;
+        const entry = findPersonById(d.data._personId);
+        if (!entry) return;
+        if (onNodeClick) {
+          onNodeClick(entry);
+        } else {
+          openDetail(entry.era, entry.person);
         }
       });
 
@@ -862,6 +870,117 @@
       _isCurrent: !!isCurrent
     };
   }
+
+  // ── Floating Family Tree Window ────────────────────────
+
+  const ftreeWindow = document.getElementById("ftree-window");
+  const ftreeWindowBody = document.getElementById("ftree-window-body");
+  const ftreeWindowTitle = document.getElementById("ftree-window-title");
+  const ftreeWindowClose = document.getElementById("ftree-window-close");
+  const ftreeWindowBack = document.getElementById("ftree-window-back");
+  const ftreeWindowHeader = document.getElementById("ftree-window-header");
+
+  let ftreeHistory = [];
+
+  function openFamilyTreeWindow(person, pushHistory) {
+    if (pushHistory !== false && ftreeWindow.classList.contains("open")) {
+      const prevId = ftreeWindowBody.dataset.currentPersonId;
+      if (prevId) ftreeHistory.push(prevId);
+    }
+
+    ftreeWindowTitle.textContent = "עץ משפחה — " + person.nameHe;
+    ftreeWindowBody.dataset.currentPersonId = person.id;
+    ftreeWindowBack.disabled = ftreeHistory.length === 0;
+
+    renderFamilyTree(person, {
+      container: ftreeWindowBody,
+      onNodeClick: function (entry) {
+        openFamilyTreeWindow(entry.person, true);
+        openDetail(entry.era, entry.person);
+      }
+    });
+
+    if (!ftreeWindow.classList.contains("open")) {
+      ftreeWindow.classList.add("open");
+    }
+  }
+
+  function closeFamilyTreeWindow() {
+    ftreeWindow.classList.remove("open");
+    ftreeWindowBody.innerHTML = '';
+    ftreeWindowBody.dataset.currentPersonId = '';
+    ftreeHistory = [];
+    ftreeWindowBack.disabled = true;
+  }
+
+  ftreeWindowClose.addEventListener("click", closeFamilyTreeWindow);
+
+  ftreeWindowBack.addEventListener("click", function () {
+    if (ftreeHistory.length === 0) return;
+    const prevId = ftreeHistory.pop();
+    const entry = findPersonById(prevId);
+    if (entry) {
+      openFamilyTreeWindow(entry.person, false);
+      openDetail(entry.era, entry.person);
+    }
+  });
+
+  // Drag support for the floating window
+  (function initFtreeDrag() {
+    let dragging = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
+
+    ftreeWindowHeader.addEventListener("mousedown", onDragStart);
+    ftreeWindowHeader.addEventListener("touchstart", onDragStart, { passive: false });
+
+    function onDragStart(e) {
+      if (e.target.closest("button")) return;
+      dragging = true;
+
+      const rect = ftreeWindow.getBoundingClientRect();
+      ftreeWindow.style.left = rect.left + "px";
+      ftreeWindow.style.top = rect.top + "px";
+      ftreeWindow.style.transform = "none";
+
+      origLeft = rect.left;
+      origTop = rect.top;
+
+      if (e.type === "touchstart") {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      } else {
+        startX = e.clientX;
+        startY = e.clientY;
+      }
+
+      document.addEventListener("mousemove", onDragMove);
+      document.addEventListener("mouseup", onDragEnd);
+      document.addEventListener("touchmove", onDragMove, { passive: false });
+      document.addEventListener("touchend", onDragEnd);
+    }
+
+    function onDragMove(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      let cx, cy;
+      if (e.type === "touchmove") {
+        cx = e.touches[0].clientX;
+        cy = e.touches[0].clientY;
+      } else {
+        cx = e.clientX;
+        cy = e.clientY;
+      }
+      ftreeWindow.style.left = (origLeft + cx - startX) + "px";
+      ftreeWindow.style.top = (origTop + cy - startY) + "px";
+    }
+
+    function onDragEnd() {
+      dragging = false;
+      document.removeEventListener("mousemove", onDragMove);
+      document.removeEventListener("mouseup", onDragEnd);
+      document.removeEventListener("touchmove", onDragMove);
+      document.removeEventListener("touchend", onDragEnd);
+    }
+  })();
 
   // ── Contribute Form ────────────────────────────────────
 
