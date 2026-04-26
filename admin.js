@@ -6,6 +6,7 @@
   if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
 
   const auth = window.JewsMapAuth;
+  const subs = window.JewsMapSubmissions;
   const TYPE_LABELS = {
     new_person: "אדם חדש",
     edit_person: "עריכת אדם",
@@ -230,6 +231,27 @@
     const adminNote = modalAdminNote.value.trim();
 
     try {
+      if (newStatus === 'approved' && selectedSubmission.type === 'new_person' && subs && window.ERAS_DATA) {
+        const rawEra = selectedSubmission.era_id;
+        const eraIdParsed = rawEra == null || rawEra === ''
+          ? null
+          : (Number.isNaN(Number(rawEra)) ? rawEra : Number(rawEra));
+        const eras = JSON.parse(JSON.stringify(window.ERAS_DATA));
+        const approved = await subs.fetchApprovedContent();
+        subs.mergeApprovedIntoEras(eras, approved);
+        const conflict = subs.findNewPersonConflict(eras, eraIdParsed, selectedSubmission.data || {});
+        if (conflict) {
+          if (conflict.kind === 'no_era') {
+            modalStatus.textContent = 'לא אושר: תקופה לא נמצאה בנתוני האתר.';
+          } else {
+            const label = conflict.kind === 'id' ? 'מזהה (ID)' : 'שם בעברית';
+            modalStatus.textContent =
+              `לא אושר: כבר קיים אדם עם אותו ${label} בתקופה הזו — ${conflict.existing.nameHe} (${conflict.existing.id}).`;
+          }
+          return;
+        }
+      }
+
       const { error: updateError } = await auth.supabase
         .from('submissions')
         .update({

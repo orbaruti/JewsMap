@@ -18,9 +18,27 @@
       return data || [];
     },
 
+    /**
+     * Returns a conflict if a person with the same id or same Hebrew name already exists in the target era.
+     * Call after mergeApprovedIntoEras so approved_content is included.
+     */
+    findNewPersonConflict(eras, eraId, personData) {
+      const era = eras.find(e => e.id == eraId);
+      if (!era) return { kind: 'no_era', eraId };
+      const id = personData.id;
+      const nameHe = (personData.nameHe || '').trim();
+      const byId = era.persons.find(p => p.id === id);
+      if (byId) return { kind: 'id', existing: byId };
+      if (nameHe) {
+        const byName = era.persons.find(p => (p.nameHe || '').trim() === nameHe);
+        if (byName) return { kind: 'name', existing: byName };
+      }
+      return null;
+    },
+
     mergeApprovedIntoEras(eras, approvedItems) {
       approvedItems.forEach(item => {
-        const era = eras.find(e => e.id === item.era_id);
+        const era = eras.find(e => e.id == item.era_id);
         if (!era) return;
 
         if (item.content_type === 'new_person') {

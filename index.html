@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>סדר הדורות — Jewish Generations Timeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,41 +11,41 @@
 </head>
 <body>
 
-  <!-- Floating Year HUD -->
-  <div id="year-hud" class="year-hud" aria-live="polite">
-    <span id="hud-he-year" class="hud-year"></span>
-    <span class="hud-sep">/</span>
-    <span id="hud-ce-year" class="hud-year hud-year-ce"></span>
-  </div>
+  <!-- Top Toolbar (all icons in one flex row — no overlap) -->
+  <div class="top-toolbar">
+    <div class="toolbar-start">
+      <button id="search-toggle" class="icon-btn search-toggle" aria-label="חיפוש">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+      </button>
+      <button id="theme-toggle" class="icon-btn theme-toggle" aria-label="החלף ערכת נושא">
+        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button id="add-person-toggle" class="icon-btn add-person-toggle" style="display:none;" aria-label="הוסף אישיות">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
 
-  <!-- Auth Button -->
-  <div id="auth-area" class="auth-area">
-    <button id="auth-btn" class="auth-btn" aria-label="התחברות">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span id="auth-label">התחבר</span>
-    </button>
-    <div id="auth-menu" class="auth-menu">
-      <div id="auth-user-info" class="auth-user-info"></div>
-      <a id="admin-link" href="admin.html" class="auth-menu-item admin-link" style="display:none;">ניהול</a>
-      <button id="signout-btn" class="auth-menu-item signout-btn">התנתק</button>
+    <div id="year-hud" class="year-hud" aria-live="polite">
+      <span id="hud-he-year" class="hud-year"></span>
+      <span class="hud-sep">/</span>
+      <span id="hud-ce-year" class="hud-year hud-year-ce"></span>
+    </div>
+
+    <div class="toolbar-end">
+      <div id="auth-area" class="auth-area">
+        <button id="auth-btn" class="auth-btn" aria-label="התחברות">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="auth-label">התחבר</span>
+        </button>
+        <div id="auth-menu" class="auth-menu">
+          <div id="auth-user-info" class="auth-user-info"></div>
+          <a id="admin-link" href="admin.html" class="auth-menu-item admin-link" style="display:none;">ניהול</a>
+          <button id="signout-btn" class="auth-menu-item signout-btn">התנתק</button>
+        </div>
+      </div>
     </div>
   </div>
-
-  <!-- Add Person Button (visible when logged in) -->
-  <button id="add-person-toggle" class="add-person-toggle" style="display:none;" aria-label="הוסף אישיות">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
-
-  <!-- Search Button -->
-  <button id="search-toggle" class="search-toggle" aria-label="חיפוש">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
-  </button>
-
-  <!-- Theme Toggle -->
-  <button id="theme-toggle" class="theme-toggle" aria-label="החלף ערכת נושא">
-    <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-    <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  </button>
 
   <!-- Search Overlay -->
   <div id="search-overlay" class="search-overlay">

@@ -1179,6 +1179,20 @@
 
     const eraIdParsed = isNaN(Number(eraId)) ? eraId : Number(eraId);
 
+    const conflict = subs.findNewPersonConflict(ERAS, eraIdParsed, personData);
+    if (conflict) {
+      if (conflict.kind === 'no_era') {
+        apStatusEl.textContent = "תקופה לא נמצאה.";
+        apStatusEl.className = "add-person-status error";
+        return;
+      }
+      const label = conflict.kind === 'id' ? 'מזהה (ID)' : 'שם בעברית';
+      apStatusEl.textContent =
+        `כבר קיים רשומה עם אותו ${label} בתקופה הזו: ${conflict.existing.nameHe} (${conflict.existing.id}).`;
+      apStatusEl.className = "add-person-status error";
+      return;
+    }
+
     apSubmitBtn.disabled = true;
     apStatusEl.textContent = "שולח...";
     apStatusEl.className = "add-person-status";
