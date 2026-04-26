@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,9 +31,20 @@
     </div>
   </div>
 
+  <!-- Add Person Button (visible when logged in) -->
+  <button id="add-person-toggle" class="add-person-toggle" style="display:none;" aria-label="הוסף אישיות">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
   <!-- Search Button -->
   <button id="search-toggle" class="search-toggle" aria-label="חיפוש">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+  </button>
+
+  <!-- Theme Toggle -->
+  <button id="theme-toggle" class="theme-toggle" aria-label="החלף ערכת נושא">
+    <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
   </button>
 
   <!-- Search Overlay -->
@@ -107,6 +118,9 @@
     </div>
     <div id="detail-badge" class="detail-badge"></div>
 
+    <!-- Family Connections -->
+    <div id="family-connections" class="family-connections"></div>
+
     <!-- Edit Toggle Button (visible when logged in) -->
     <button id="edit-toggle-btn" class="edit-toggle-btn" style="display:none;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -120,6 +134,7 @@
         <button class="detail-tab" data-tab="midrash">מדרש</button>
         <button class="detail-tab" data-tab="sources">מקורות</button>
         <button class="detail-tab" data-tab="notes">הערות</button>
+        <button class="detail-tab" data-tab="family">עץ משפחה</button>
       </div>
       <div class="detail-tab-content">
         <div id="tab-summary" class="tab-pane active">
@@ -134,6 +149,9 @@
         <div id="tab-notes" class="tab-pane">
           <div id="notes-list"></div>
           <p id="notes-placeholder" class="tab-placeholder">הערות יתמלאו בהמשך...</p>
+        </div>
+        <div id="tab-family" class="tab-pane">
+          <div id="family-tree-container"></div>
         </div>
       </div>
     </div>
@@ -177,6 +195,70 @@
     </div>
   </aside>
 
+  <!-- Add Person Modal -->
+  <div id="add-person-backdrop" class="add-person-backdrop"></div>
+  <div id="add-person-modal" class="add-person-modal">
+    <div class="add-person-modal-header">
+      <h2 class="add-person-modal-title">הוסף אישיות</h2>
+      <button id="add-person-close" class="add-person-close" aria-label="סגור">&times;</button>
+    </div>
+
+    <div class="add-person-modal-body">
+      <div class="add-person-section">
+        <h3 class="add-person-section-title">שדות חובה</h3>
+        <label class="add-person-label" for="ap-name-he">שם בעברית <span class="required-mark">*</span></label>
+        <input id="ap-name-he" class="add-person-input" type="text" placeholder="לדוגמה: משה רבנו" required>
+
+        <label class="add-person-label" for="ap-name-en">שם באנגלית <span class="required-mark">*</span></label>
+        <input id="ap-name-en" class="add-person-input" type="text" placeholder="e.g. Moshe Rabenu" dir="ltr" required>
+
+        <label class="add-person-label" for="ap-era">תקופה <span class="required-mark">*</span></label>
+        <select id="ap-era" class="add-person-input add-person-select" required>
+          <option value="">בחר תקופה...</option>
+        </select>
+      </div>
+
+      <div class="add-person-section">
+        <h3 class="add-person-section-title">שדות אופציונליים</h3>
+        <div class="add-person-row">
+          <div class="add-person-field">
+            <label class="add-person-label" for="ap-birth-year">שנת לידה (עברית)</label>
+            <input id="ap-birth-year" class="add-person-input" type="number" placeholder="לדוגמה: 2368">
+          </div>
+          <div class="add-person-field">
+            <label class="add-person-label" for="ap-death-year">שנת פטירה (עברית)</label>
+            <input id="ap-death-year" class="add-person-input" type="number" placeholder="לדוגמה: 2488">
+          </div>
+        </div>
+
+        <label class="add-person-label" for="ap-title">תואר</label>
+        <input id="ap-title" class="add-person-input" type="text" placeholder="לדוגמה: צדיק, נביא, מלך...">
+
+        <label class="add-person-label" for="ap-father-id">מזהה אב (ID)</label>
+        <input id="ap-father-id" class="add-person-input" type="text" placeholder="לדוגמה: avraham-avinu" dir="ltr">
+
+        <label class="add-person-label" for="ap-mother-id">מזהה אם (ID)</label>
+        <input id="ap-mother-id" class="add-person-input" type="text" placeholder="לדוגמה: sarah-imenu" dir="ltr">
+
+        <label class="add-person-label" for="ap-spouse-ids">מזהי בני/בנות זוג (מופרדים בפסיקים)</label>
+        <input id="ap-spouse-ids" class="add-person-input" type="text" placeholder="לדוגמה: sarah-imenu, hagar" dir="ltr">
+
+        <label class="add-person-label" for="ap-summary">סיכום</label>
+        <textarea id="ap-summary" class="add-person-input" rows="3" placeholder="סיכום קצר על האישיות..."></textarea>
+
+        <label class="add-person-label" for="ap-midrash">מדרש</label>
+        <textarea id="ap-midrash" class="add-person-input" rows="3" placeholder="מדרש או סיפור..."></textarea>
+
+        <label class="add-person-label" for="ap-sources">מקורות</label>
+        <textarea id="ap-sources" class="add-person-input" rows="3" placeholder="מקורות והפניות..."></textarea>
+      </div>
+
+      <button id="ap-submit" class="add-person-submit-btn" disabled>שלח לאישור</button>
+      <div id="ap-status" class="add-person-status"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
   <script src="data.js"></script>

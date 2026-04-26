@@ -1,6 +1,10 @@
 (function () {
   "use strict";
 
+  // Apply saved theme
+  const savedTheme = localStorage.getItem("seder-hadorot-theme");
+  if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+
   const auth = window.JewsMapAuth;
   const TYPE_LABELS = {
     new_person: "אדם חדש",

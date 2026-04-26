@@ -8,6 +8,32 @@
   let currentDetailEra = null;
   let currentDetailPerson = null;
 
+  // ── Theme ──────────────────────────────────────────────
+
+  function initTheme() {
+    const saved = localStorage.getItem("seder-hadorot-theme");
+    if (saved) {
+      document.documentElement.setAttribute("data-theme", saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("seder-hadorot-theme", next);
+    setTimeout(drawTree, 100);
+  }
+
+  initTheme();
+
+  const themeToggleBtn = document.getElementById("theme-toggle");
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", toggleTheme);
+  }
+
   // ── Helpers ──────────────────────────────────────────────
 
   function hebrewToCE(y) {
@@ -42,6 +68,62 @@
     </svg>`;
   }
 
+  // ── Family Helpers ─────────────────────────────────────
+
+  let personIndex = null;
+
+  function buildPersonIndex() {
+    personIndex = {};
+    ERAS.forEach(era => {
+      era.persons.forEach(person => {
+        if (!personIndex[person.id]) {
+          personIndex[person.id] = { person, era };
+        }
+      });
+    });
+  }
+
+  function findPersonById(id) {
+    if (!id) return null;
+    if (!personIndex) buildPersonIndex();
+    return personIndex[id] || null;
+  }
+
+  function getChildren(personId) {
+    if (!personIndex) buildPersonIndex();
+    const results = [];
+    const seen = new Set();
+    ERAS.forEach(era => {
+      era.persons.forEach(p => {
+        if ((p.fatherId === personId || p.motherId === personId) && !seen.has(p.id)) {
+          seen.add(p.id);
+          results.push({ person: p, era });
+        }
+      });
+    });
+    return results;
+  }
+
+  function getSpouses(personId) {
+    const entry = findPersonById(personId);
+    if (!entry || !entry.person.spouseIds) return [];
+    return entry.person.spouseIds.map(sid => findPersonById(sid)).filter(Boolean);
+  }
+
+  function getSiblings(personId) {
+    const entry = findPersonById(personId);
+    if (!entry || !entry.person.fatherId) return [];
+    const results = [];
+    ERAS.forEach(era => {
+      era.persons.forEach(p => {
+        if (p.fatherId === entry.person.fatherId && p.id !== personId) {
+          results.push({ person: p, era });
+        }
+      });
+    });
+    return results;
+  }
+
   // ── Auth UI ─────────────────────────────────────────────
 
   const authBtn = document.getElementById("auth-btn");
@@ -54,6 +136,7 @@
   const detailView = document.getElementById("detail-view");
   const editToggleBtn = document.getElementById("edit-toggle-btn");
   const editCancelBtn = document.getElementById("edit-cancel-btn");
+  const addPersonToggle = document.getElementById("add-person-toggle");
 
   let authMenuOpen = false;
   let editMode = false;
@@ -106,6 +189,7 @@
 
   function updateEditToggleVisibility() {
     editToggleBtn.style.display = auth.isLoggedIn() ? '' : 'none';
+    addPersonToggle.style.display = auth.isLoggedIn() ? '' : 'none';
   }
 
   function enterEditMode() {
@@ -174,9 +258,18 @@
           badgeHTML = `<span class="card-badge ${bc}">${person.title}</span>`;
         }
 
+        let lineageHTML = "";
+        if (person.fatherId) {
+          const father = findPersonById(person.fatherId);
+          if (father) {
+            lineageHTML = `<div class="card-lineage">בן ${father.person.nameHe}</div>`;
+          }
+        }
+
         card.innerHTML = `
           <div class="card-avatar">${personAvatarSVG()}</div>
           <div class="card-name">${person.nameHe}</div>
+          ${lineageHTML}
           <div class="card-years">${birthStr} – ${deathStr}</div>
           <div class="card-years-ce">${ceStr}</div>
           ${badgeHTML}
@@ -369,13 +462,15 @@
     treeSvg.setAttribute("viewBox", `0 0 ${svgW} ${svgH}`);
 
     const centerX = svgW / 2;
+    const style = getComputedStyle(document.documentElement);
+    const goldColor = style.getPropertyValue("--gold").trim() || "#D4B896";
 
     const trunk = document.createElementNS("http://www.w3.org/2000/svg", "line");
     trunk.setAttribute("x1", centerX);
     trunk.setAttribute("y1", 200);
     trunk.setAttribute("x2", centerX);
     trunk.setAttribute("y2", svgH - 100);
-    trunk.setAttribute("stroke", "#C6A664");
+    trunk.setAttribute("stroke", goldColor);
     trunk.setAttribute("stroke-width", "2");
     trunk.setAttribute("opacity", "0.25");
     trunk.setAttribute("stroke-dasharray", "8 8");
@@ -410,7 +505,7 @@
         : `M ${startX} ${y} C ${startX + cpOffset} ${y - 10}, ${endX - cpOffset} ${y + 10}, ${endX} ${y}`;
 
       branchLine.setAttribute("d", d);
-      branchLine.setAttribute("stroke", "#C6A664");
+      branchLine.setAttribute("stroke", goldColor);
       branchLine.setAttribute("stroke-width", "1.5");
       branchLine.setAttribute("fill", "none");
       branchLine.setAttribute("opacity", "0.2");
@@ -448,6 +543,8 @@
 
     document.getElementById("detail-avatar").innerHTML = personAvatarSVG();
 
+    renderFamilyConnections(person);
+
     const summaryPane = document.getElementById("tab-summary");
     summaryPane.innerHTML = person.summary
       ? `<p>${person.summary}</p>`
@@ -479,6 +576,8 @@
       notesPlaceholder.style.display = '';
     }
 
+    document.getElementById("family-tree-container").innerHTML = '';
+
     document.querySelectorAll(".detail-tab").forEach((t) => t.classList.remove("active"));
     document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
     document.querySelector('.detail-tab[data-tab="summary"]').classList.add("active");
@@ -509,15 +608,260 @@
       document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
       tab.classList.add("active");
       document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+
+      if (tab.dataset.tab === "family" && currentDetailPerson) {
+        renderFamilyTree(currentDetailPerson);
+      }
     });
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (searchOverlay.classList.contains("open")) closeSearch();
+      if (apModal.classList.contains("open")) closeAddPersonModal();
+      else if (searchOverlay.classList.contains("open")) closeSearch();
       else if (detailPanel.classList.contains("open")) closeDetail();
     }
   });
+
+  // ── Family Connections Section ─────────────────────────
+
+  function renderFamilyConnections(person) {
+    const container = document.getElementById("family-connections");
+    container.innerHTML = '';
+    container.classList.remove("has-family");
+
+    const rows = [];
+
+    if (person.fatherId) {
+      const f = findPersonById(person.fatherId);
+      if (f) rows.push({ label: "אב", entries: [f] });
+    }
+    if (person.motherId) {
+      const m = findPersonById(person.motherId);
+      if (m) rows.push({ label: "אם", entries: [m] });
+    }
+    if (person.spouseIds && person.spouseIds.length > 0) {
+      const spouses = person.spouseIds.map(sid => findPersonById(sid)).filter(Boolean);
+      if (spouses.length > 0) rows.push({ label: "בן/בת זוג", entries: spouses });
+    }
+
+    const children = getChildren(person.id);
+    if (children.length > 0) {
+      rows.push({ label: "ילדים", entries: children });
+    }
+
+    if (rows.length === 0) return;
+
+    container.classList.add("has-family");
+
+    rows.forEach(row => {
+      const div = document.createElement("div");
+      div.className = "family-conn-row";
+      let html = `<span class="family-conn-label">${row.label}:</span>`;
+      row.entries.forEach((entry, i) => {
+        if (i > 0) html += `<span class="family-conn-sep">،</span>`;
+        html += `<span class="family-conn-link" data-person-id="${entry.person.id}">${entry.person.nameHe}</span>`;
+      });
+      div.innerHTML = html;
+      container.appendChild(div);
+    });
+
+    container.querySelectorAll(".family-conn-link").forEach(link => {
+      link.addEventListener("click", () => {
+        const pid = link.dataset.personId;
+        const entry = findPersonById(pid);
+        if (entry) openDetail(entry.era, entry.person);
+      });
+    });
+  }
+
+  // ── Family Tree Renderer (D3) ──────────────────────────
+
+  function renderFamilyTree(person) {
+    const container = document.getElementById("family-tree-container");
+    container.innerHTML = '';
+
+    const treeData = buildFamilyTreeData(person);
+    const hasAnyRelation =
+      !!(person.fatherId || person.motherId || (person.spouseIds && person.spouseIds.length) || getChildren(person.id).length);
+    if (!treeData || !hasAnyRelation) {
+      container.innerHTML = '<div class="ftree-no-data">אין נתוני משפחה זמינים</div>';
+      return;
+    }
+
+    const nodeW = 120, nodeH = 44, marginX = 20, marginY = 60;
+
+    const root = d3.hierarchy(treeData);
+    const treeLayout = d3.tree().nodeSize([nodeW + marginX, nodeH + marginY]);
+    treeLayout(root);
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    root.each(d => {
+      if (d.x < minX) minX = d.x;
+      if (d.x > maxX) maxX = d.x;
+      if (d.y < minY) minY = d.y;
+      if (d.y > maxY) maxY = d.y;
+    });
+
+    const padX = 30, padY = 30;
+    const width = (maxX - minX) + nodeW + padX * 2;
+    const height = (maxY - minY) + nodeH + padY * 2;
+    const offsetX = -minX + nodeW / 2 + padX;
+    const offsetY = -minY + padY;
+
+    const svg = d3.select(container).append("svg")
+      .attr("width", Math.max(width, 300))
+      .attr("height", Math.max(height, 200))
+      .attr("viewBox", `0 0 ${Math.max(width, 300)} ${Math.max(height, 200)}`);
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${offsetX}, ${offsetY})`);
+
+    g.selectAll(".ftree-link")
+      .data(root.links().filter((l) => l.target.data._personId != null))
+      .join("path")
+      .attr("class", (d) => {
+        const fromDummy = d.source.data._isDummyRoot;
+        const toSpouse = d.target.data._isSpouse;
+        if (fromDummy || toSpouse) return "ftree-link ftree-link-spouse";
+        return "ftree-link";
+      })
+      .attr("d", d => {
+        const sx = d.source.x, sy = d.source.y + nodeH / 2;
+        const tx = d.target.x, ty = d.target.y - nodeH / 2;
+        const midY = (sy + ty) / 2;
+        return `M${sx},${sy} C${sx},${midY} ${tx},${midY} ${tx},${ty}`;
+      });
+
+    const nodes = g.selectAll(".ftree-node")
+      .data(root.descendants().filter((d) => d.data._personId != null))
+      .join("g")
+      .attr("class", d =>
+        "ftree-node" +
+        (d.data._isCurrent ? " ftree-current" : "") +
+        (d.data._isSpouse ? " ftree-spouse" : "")
+      )
+      .attr("transform", d => `translate(${d.x - nodeW / 2}, ${d.y - nodeH / 2})`)
+      .style("cursor", "pointer")
+      .on("click", (event, d) => {
+        if (d.data._personId) {
+          const entry = findPersonById(d.data._personId);
+          if (entry) openDetail(entry.era, entry.person);
+        }
+      });
+
+    nodes.append("rect")
+      .attr("width", nodeW)
+      .attr("height", nodeH)
+      .attr("rx", 8)
+      .attr("ry", 8);
+
+    nodes.append("text")
+      .attr("x", nodeW / 2)
+      .attr("y", nodeH / 2 - 4)
+      .text(d => d.data.name || "");
+
+    nodes.append("text")
+      .attr("class", "ftree-years")
+      .attr("x", nodeW / 2)
+      .attr("y", nodeH / 2 + 10)
+      .text(d => d.data._years || "");
+  }
+
+  // Recursively attach up to N generations of children (N=3: children, grandchildren, great-grandchildren).
+  function addDescendantGenerations(pNode, p, maxGenerations) {
+    if (maxGenerations <= 0) return;
+    const kids = getChildren(p.id);
+    if (kids.length === 0) return;
+    pNode.children = kids.map((k) => {
+      const n = personToNode(k.person, false);
+      addDescendantGenerations(n, k.person, maxGenerations - 1);
+      return n;
+    });
+  }
+
+  function buildSpouseNodesForTree(person) {
+    const out = [];
+    (person.spouseIds || []).forEach((sid) => {
+      if (!sid) return;
+      if (person.motherId && sid === person.motherId) return;
+      const e = findPersonById(sid);
+      if (!e) return;
+      const n = personToNode(e.person, false);
+      n._isSpouse = true;
+      out.push(n);
+    });
+    return out;
+  }
+
+  function marriageDummyRoot(children) {
+    return {
+      name: "",
+      _personId: null,
+      _years: "",
+      _isDummyRoot: true,
+      children: children
+    };
+  }
+
+  function buildFamilyTreeData(person) {
+    // One generation above (parents), three below (children through great-grandchildren).
+    const currentNode = personToNode(person, true);
+    addDescendantGenerations(currentNode, person, 3);
+
+    const spouseNodes = buildSpouseNodesForTree(person);
+
+    // Build mother branch as sibling of currentNode under father
+    let motherNode = null;
+    if (person.motherId) {
+      const motherEntry = findPersonById(person.motherId);
+      if (motherEntry) {
+        motherNode = personToNode(motherEntry.person, false);
+        motherNode._isSpouse = true;
+      }
+    }
+
+    // Walk up one generation to parent(s) only (no grandparents).
+    let bottomNode = currentNode;
+
+    if (person.fatherId) {
+      const fatherEntry = findPersonById(person.fatherId);
+      if (fatherEntry) {
+        const fatherNode = personToNode(fatherEntry.person, false);
+        // Father's children: current person, wives/husbands in parallel, then co-parent
+        const kids = [currentNode, ...spouseNodes];
+        if (motherNode) kids.push(motherNode);
+        fatherNode.children = kids;
+        bottomNode = fatherNode;
+      } else {
+        if (motherNode) {
+          motherNode.children = [currentNode, ...spouseNodes];
+          bottomNode = motherNode;
+        } else if (spouseNodes.length) {
+          bottomNode = marriageDummyRoot([currentNode, ...spouseNodes]);
+        }
+      }
+    } else if (motherNode) {
+      // No father but has mother: mother is the root
+      motherNode.children = [currentNode, ...spouseNodes];
+      bottomNode = motherNode;
+    } else if (spouseNodes.length) {
+      bottomNode = marriageDummyRoot([currentNode, ...spouseNodes]);
+    }
+
+    return bottomNode;
+  }
+
+  function personToNode(person, isCurrent) {
+    const bStr = person.birthYear != null ? person.birthYear : "?";
+    const dStr = person.deathYear != null ? person.deathYear : "?";
+    return {
+      name: person.nameHe,
+      _personId: person.id,
+      _years: bStr + "–" + dStr,
+      _isCurrent: !!isCurrent
+    };
+  }
 
   // ── Contribute Form ────────────────────────────────────
 
@@ -601,6 +945,138 @@
     }
   });
 
+  // ── Add Person Modal ───────────────────────────────────
+
+  const apModal = document.getElementById("add-person-modal");
+  const apBackdrop = document.getElementById("add-person-backdrop");
+  const apCloseBtn = document.getElementById("add-person-close");
+  const apSubmitBtn = document.getElementById("ap-submit");
+  const apStatusEl = document.getElementById("ap-status");
+  const apEraSelect = document.getElementById("ap-era");
+  const apNameHe = document.getElementById("ap-name-he");
+  const apNameEn = document.getElementById("ap-name-en");
+
+  function populateEraDropdown() {
+    apEraSelect.innerHTML = '<option value="">בחר תקופה...</option>';
+    ERAS.forEach(era => {
+      const opt = document.createElement("option");
+      opt.value = era.id;
+      opt.textContent = era.nameHe;
+      apEraSelect.appendChild(opt);
+    });
+  }
+
+  function openAddPersonModal() {
+    populateEraDropdown();
+    resetAddPersonForm();
+    apBackdrop.classList.add("open");
+    apModal.classList.add("open");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => apNameHe.focus(), 150);
+  }
+
+  function closeAddPersonModal() {
+    apModal.classList.remove("open");
+    apBackdrop.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  function resetAddPersonForm() {
+    apNameHe.value = "";
+    apNameEn.value = "";
+    apEraSelect.value = "";
+    document.getElementById("ap-birth-year").value = "";
+    document.getElementById("ap-death-year").value = "";
+    document.getElementById("ap-title").value = "";
+    document.getElementById("ap-father-id").value = "";
+    document.getElementById("ap-mother-id").value = "";
+    document.getElementById("ap-spouse-ids").value = "";
+    document.getElementById("ap-summary").value = "";
+    document.getElementById("ap-midrash").value = "";
+    document.getElementById("ap-sources").value = "";
+    apStatusEl.textContent = "";
+    apStatusEl.className = "add-person-status";
+    apSubmitBtn.disabled = true;
+    apModal.querySelectorAll(".add-person-input.invalid").forEach(el => el.classList.remove("invalid"));
+  }
+
+  function validateAddPersonForm() {
+    const nameHe = apNameHe.value.trim();
+    const nameEn = apNameEn.value.trim();
+    const eraId = apEraSelect.value;
+    apSubmitBtn.disabled = !(nameHe && nameEn && eraId);
+  }
+
+  addPersonToggle.addEventListener("click", openAddPersonModal);
+  apCloseBtn.addEventListener("click", closeAddPersonModal);
+  apBackdrop.addEventListener("click", closeAddPersonModal);
+
+  apNameHe.addEventListener("input", validateAddPersonForm);
+  apNameEn.addEventListener("input", validateAddPersonForm);
+  apEraSelect.addEventListener("change", validateAddPersonForm);
+
+  apSubmitBtn.addEventListener("click", async () => {
+    if (!auth.isLoggedIn()) return;
+
+    const nameHe = apNameHe.value.trim();
+    const nameEn = apNameEn.value.trim();
+    const eraId = apEraSelect.value;
+
+    if (!nameHe || !nameEn || !eraId) return;
+
+    let hasError = false;
+    [apNameHe, apNameEn, apEraSelect].forEach(el => {
+      if (!el.value.trim()) { el.classList.add("invalid"); hasError = true; }
+      else el.classList.remove("invalid");
+    });
+    if (hasError) return;
+
+    const personId = nameEn.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
+
+    const birthVal = document.getElementById("ap-birth-year").value.trim();
+    const deathVal = document.getElementById("ap-death-year").value.trim();
+    const fatherVal = document.getElementById("ap-father-id").value.trim();
+    const motherVal = document.getElementById("ap-mother-id").value.trim();
+    const spousesVal = document.getElementById("ap-spouse-ids").value.trim();
+
+    const personData = {
+      id: personId,
+      nameHe,
+      nameEn,
+      birthYear: birthVal ? parseInt(birthVal, 10) : null,
+      deathYear: deathVal ? parseInt(deathVal, 10) : null,
+      title: document.getElementById("ap-title").value.trim(),
+      summary: document.getElementById("ap-summary").value.trim(),
+      midrash: document.getElementById("ap-midrash").value.trim(),
+      sources: document.getElementById("ap-sources").value.trim(),
+      image: null
+    };
+
+    if (fatherVal) personData.fatherId = fatherVal;
+    if (motherVal) personData.motherId = motherVal;
+    if (spousesVal) {
+      personData.spouseIds = spousesVal.split(",").map(s => s.trim()).filter(Boolean);
+    }
+
+    const eraIdParsed = isNaN(Number(eraId)) ? eraId : Number(eraId);
+
+    apSubmitBtn.disabled = true;
+    apStatusEl.textContent = "שולח...";
+    apStatusEl.className = "add-person-status";
+
+    try {
+      await subs.submitNewPerson(eraIdParsed, personData);
+      apStatusEl.textContent = "נשלח בהצלחה! ממתין לאישור מנהל.";
+      apStatusEl.className = "add-person-status success";
+      setTimeout(() => closeAddPersonModal(), 1800);
+    } catch (err) {
+      console.error("Add person error:", err);
+      apStatusEl.textContent = "שגיאה בשליחה: " + (err.message || err);
+      apStatusEl.className = "add-person-status error";
+      apSubmitBtn.disabled = false;
+    }
+  });
+
   // ── Search ─────────────────────────────────────────────
 
   const searchToggle = document.getElementById("search-toggle");
@@ -672,6 +1148,8 @@
   // ── Init: Auth + Merge Approved Content + Render ───────
 
   async function initApp() {
+    buildPersonIndex();
+
     try {
       await auth.init();
     } catch (e) {
@@ -682,6 +1160,7 @@
       const approved = await subs.fetchApprovedContent();
       if (approved.length > 0) {
         subs.mergeApprovedIntoEras(ERAS, approved);
+        buildPersonIndex();
       }
     } catch (e) {
       console.warn("Could not fetch approved content:", e.message);
