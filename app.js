@@ -605,8 +605,10 @@
   document.querySelectorAll(".detail-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       if (tab.dataset.tab === "family" && currentDetailPerson) {
+        const person = currentDetailPerson;
+        closeDetail();
         ftreeHistory = [];
-        openFamilyTreeWindow(currentDetailPerson, false);
+        openFamilyTreeWindow(person, false);
         return;
       }
 
@@ -896,7 +898,6 @@
       container: ftreeWindowBody,
       onNodeClick: function (entry) {
         openFamilyTreeWindow(entry.person, true);
-        openDetail(entry.era, entry.person);
       }
     });
 
@@ -921,7 +922,6 @@
     const entry = findPersonById(prevId);
     if (entry) {
       openFamilyTreeWindow(entry.person, false);
-      openDetail(entry.era, entry.person);
     }
   });
 
