@@ -37,43 +37,7 @@
     },
 
     mergeApprovedIntoEras(eras, approvedItems) {
-      approvedItems.forEach(item => {
-        const era = eras.find(e => e.id == item.era_id);
-        if (!era) return;
-
-        if (item.content_type === 'new_person') {
-          const exists = era.persons.some(p => p.id === item.data.id);
-          if (!exists) {
-            era.persons.push(item.data);
-          }
-        } else if (item.content_type === 'edit_person') {
-          const person = era.persons.find(p => p.id === item.person_id);
-          if (person) {
-            Object.keys(item.data).forEach(key => {
-              if (item.data[key] !== undefined && item.data[key] !== null && item.data[key] !== '') {
-                person[key] = item.data[key];
-              }
-            });
-          }
-        } else if (item.content_type === 'add_source') {
-          const person = era.persons.find(p => p.id === item.person_id);
-          if (person) {
-            const existing = person.sources || '';
-            const addition = item.data.sources || '';
-            person.sources = existing ? existing + '\n' + addition : addition;
-          }
-        } else if (item.content_type === 'add_note') {
-          const person = era.persons.find(p => p.id === item.person_id);
-          if (person) {
-            if (!person.notes) person.notes = [];
-            person.notes.push({
-              text: item.data.note,
-              author: item.data.authorName || '',
-              date: item.created_at
-            });
-          }
-        }
-      });
+      window.JewsMapMergeApproved.mergeApprovedIntoEras(eras, approvedItems);
     },
 
     async submitNewPerson(eraId, personData) {

@@ -242,6 +242,7 @@
       era.persons.forEach((person, pIdx) => {
         const card = document.createElement("div");
         card.className = "person-card " + (pIdx % 2 === 0 ? "side-right" : "side-left");
+        card.setAttribute("data-testid", "person-card");
         card.setAttribute("role", "button");
         card.setAttribute("tabindex", "0");
         card.dataset.personId = person.id;
@@ -319,6 +320,7 @@
     ERAS.forEach((era, idx) => {
       const dot = document.createElement("button");
       dot.className = "era-dot";
+      dot.setAttribute("data-testid", "era-dot");
       dot.dataset.eraIdx = idx;
       dot.innerHTML = `<span class="era-dot-tooltip">${era.nameHe}</span>`;
       dot.addEventListener("click", () => {
@@ -547,13 +549,10 @@
 
     const summaryPane = document.getElementById("tab-summary");
     summaryPane.innerHTML = person.summary
-      ? `<p>${person.summary}</p>`
-      : `<p class="tab-placeholder">תוכן הסיכום יתמלא בהמשך...</p>`;
+      ? `<p data-testid="detail-summary">${person.summary}</p>`
+      : `<p class="tab-placeholder" data-testid="detail-summary">תוכן הסיכום יתמלא בהמשך...</p>`;
 
-    const midrashPane = document.getElementById("tab-midrash");
-    midrashPane.innerHTML = person.midrash
-      ? `<p>${person.midrash}</p>`
-      : `<p class="tab-placeholder">תוכן המדרש יתמלא בהמשך...</p>`;
+    renderMidrashTab(person);
 
     const sourcesPane = document.getElementById("tab-sources");
     sourcesPane.innerHTML = person.sources
@@ -577,6 +576,8 @@
     }
 
     document.getElementById("family-tree-container").innerHTML = '';
+
+    renderLifetimeJourney(person);
 
     document.querySelectorAll(".detail-tab").forEach((t) => t.classList.remove("active"));
     document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
@@ -627,6 +628,130 @@
       else if (detailPanel.classList.contains("open")) closeDetail();
     }
   });
+
+  // ── Lifetime journey (מסע חיים) — optional curated beats per person ──
+
+  function getLifetimeJourneyForPerson(person) {
+    if (!person) return null;
+    const direct = person.lifetimeJourney;
+    if (direct && direct.length) return direct;
+    const entry = findPersonById(person.id);
+    if (entry && entry.person.lifetimeJourney && entry.person.lifetimeJourney.length) {
+      return entry.person.lifetimeJourney;
+    }
+    return null;
+  }
+
+  function journeySourceBadgeClass(layer) {
+    if (layer === "midrash") return "journey-source-midrash";
+    if (layer === "tanach") return "journey-source-tanach";
+    if (layer === "chazal") return "journey-source-chazal";
+    return "journey-source-default";
+  }
+
+  function journeySourceLabel(layer) {
+    if (layer === "midrash") return "מדרש";
+    if (layer === "tanach") return "תנ״ך";
+    if (layer === "chazal") return "חז״ל";
+    return layer || "";
+  }
+
+  function buildJourneyBeatHTML(beat) {
+    const year = beat.year != null ? `<span class="journey-year">שנת ${beat.year}</span>` : "";
+    const badge = beat.sourceLayer
+      ? `<span class="journey-source-badge ${journeySourceBadgeClass(beat.sourceLayer)}">${journeySourceLabel(beat.sourceLayer)}</span>`
+      : "";
+    const chips = (beat.relatedPersonIds || [])
+      .map((id) => {
+        const e = findPersonById(id);
+        if (!e) return "";
+        return `<button type="button" class="journey-chip journey-link" data-person-id="${id}">${e.person.nameHe}</button>`;
+      })
+      .filter(Boolean)
+      .join("");
+    const chipsBlock = chips ? `<div class="journey-chips">${chips}</div>` : "";
+    const workBlock = beat.workHe
+      ? `<p class="journey-beat-work">${beat.workHe}</p>`
+      : "";
+    const sourceBlock = beat.source
+      ? `<p class="journey-beat-source"><span class="journey-source-label">מקור:</span> ${beat.source}</p>`
+      : "";
+    return `
+      <li class="journey-beat">
+        <div class="journey-beat-top">
+          <h4 class="journey-beat-title">${beat.titleHe}</h4>
+          ${year} ${badge}
+        </div>
+        <p class="journey-beat-text">${beat.summaryHe}</p>
+        ${workBlock}
+        ${sourceBlock}
+        ${chipsBlock}
+      </li>`;
+  }
+
+  function wireJourneyLinks(containerEl) {
+    if (!containerEl) return;
+    containerEl.querySelectorAll(".journey-link").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const id = btn.dataset.personId;
+        const ent = findPersonById(id);
+        if (ent) openDetail(ent.era, ent.person);
+      });
+    });
+  }
+
+  function renderLifetimeJourney(person) {
+    const journeyEl = document.getElementById("tab-journey");
+    const beats = getLifetimeJourneyForPerson(person);
+    if (!beats || !beats.length) {
+      journeyEl.innerHTML = `<p class="journey-empty">מסע חיים — אין אירועים מסודרים איש עדיין. <span class="journey-hint">(בחרו באברהם אבינו לתצוגת דוגמה.)</span></p>`;
+      return;
+    }
+
+    const title = `<header class="journey-heading"><h3 class="journey-title">מסע חיים</h3><p class="journey-sub">נקודות בולטות בחייו של ${person.nameHe} — מקורות: תנ״ך / מסורת.</p></header>`;
+    const items = beats.map((b) => buildJourneyBeatHTML(b)).join("");
+    journeyEl.innerHTML = `${title}<ol class="journey-timeline">${items}</ol>`;
+    wireJourneyLinks(journeyEl);
+  }
+
+  function getMidrashJourneyForPerson(person) {
+    if (!person) return null;
+    if (person.midrashJourney && person.midrashJourney.length) return person.midrashJourney;
+    const entry = findPersonById(person.id);
+    if (entry && entry.person.midrashJourney && entry.person.midrashJourney.length) {
+      return entry.person.midrashJourney;
+    }
+    return null;
+  }
+
+  function renderMidrashTab(person) {
+    const midrashEl = document.getElementById("tab-midrash");
+    const beats = getMidrashJourneyForPerson(person);
+    if (beats && beats.length) {
+      const title = `<header class="journey-heading"><h3 class="journey-title">מדרש — כרטיסים</h3><p class="journey-sub">מדרש ואגדה הקשורים ל${person.nameHe} — לפי חיבורים ומקורות במסורת.</p></header>`;
+      const items = beats.map((b) => buildJourneyBeatHTML(b)).join("");
+      midrashEl.innerHTML = `${title}<ol class="journey-timeline journey-timeline--midrash">${items}</ol>`;
+      wireJourneyLinks(midrashEl);
+      return;
+    }
+    const entry = findPersonById(person.id);
+    const legacy = ((person.midrash || entry?.person?.midrash || "").trim());
+    if (legacy) {
+      const syn = {
+        titleHe: "מדרש",
+        summaryHe: legacy,
+        sourceLayer: "chazal",
+        source: "",
+        relatedPersonIds: [],
+      };
+      const title = `<header class="journey-heading"><h3 class="journey-title">מדרש</h3><p class="journey-sub">טקסט מדרשי שמור בפרופיל (לפני מעבר לכרטיסים מסודרים).</p></header>`;
+      midrashEl.innerHTML = `${title}<ol class="journey-timeline journey-timeline--midrash">${buildJourneyBeatHTML(syn)}</ol>`;
+      wireJourneyLinks(midrashEl);
+      return;
+    }
+    midrashEl.innerHTML = `<p class="journey-empty">מדרש — אין כרטיסי מדרש עדיין. <span class="journey-hint">(בחרו באברהם אבינו לתצוגת דוגמה.)</span></p>`;
+  }
 
   // ── Family Connections Section ─────────────────────────
 
@@ -724,7 +849,10 @@
       .attr("transform", `translate(${offsetX}, ${offsetY})`);
 
     g.selectAll(".ftree-link")
-      .data(root.links().filter((l) => l.target.data._personId != null))
+      .data(root.links().filter((l) => {
+        const t = l.target.data;
+        return t._personId != null || t._isDummyRoot === true;
+      }))
       .join("path")
       .attr("class", (d) => {
         const fromDummy = d.source.data._isDummyRoot;
@@ -814,6 +942,35 @@
     };
   }
 
+  /** All persons sharing the same parent links as `person` (for one tree generation under a couple). */
+  function getFullSiblingEntries(person) {
+    const fid = person.fatherId;
+    const mid = person.motherId;
+    const seen = new Set();
+    const out = [];
+    ERAS.forEach((era) => {
+      era.persons.forEach((p) => {
+        let match = false;
+        if (fid && mid) match = p.fatherId === fid && p.motherId === mid;
+        else if (fid) match = p.fatherId === fid;
+        else if (mid) match = p.motherId === mid;
+        if (!match) return;
+        if (seen.has(p.id)) return;
+        seen.add(p.id);
+        out.push({ person: p, era });
+      });
+    });
+    out.sort((a, b) => (a.person.birthYear || 0) - (b.person.birthYear || 0));
+    return out;
+  }
+
+  /** Wrap a person node with their own spouses (marriage bar), not as extra “children” of the parents. */
+  function branchWithOwnSpouses(focusPerson, p, node, isFocus, focusSpouseNodes) {
+    const spouses = isFocus ? focusSpouseNodes : buildSpouseNodesForTree(p);
+    if (!spouses.length) return node;
+    return marriageDummyRoot([node, ...spouses]);
+  }
+
   function buildFamilyTreeData(person) {
     // One generation above (parents), three below (children through great-grandchildren).
     const currentNode = personToNode(person, true);
@@ -821,7 +978,6 @@
 
     const spouseNodes = buildSpouseNodesForTree(person);
 
-    // Build mother branch as sibling of currentNode under father
     let motherNode = null;
     if (person.motherId) {
       const motherEntry = findPersonById(person.motherId);
@@ -831,29 +987,58 @@
       }
     }
 
-    // Walk up one generation to parent(s) only (no grandparents).
     let bottomNode = currentNode;
 
     if (person.fatherId) {
       const fatherEntry = findPersonById(person.fatherId);
       if (fatherEntry) {
         const fatherNode = personToNode(fatherEntry.person, false);
-        // Father's children: current person, wives/husbands in parallel, then co-parent
-        const kids = [currentNode, ...spouseNodes];
-        if (motherNode) kids.push(motherNode);
-        fatherNode.children = kids;
-        bottomNode = fatherNode;
+
+        if (motherNode) {
+          // Parents are a couple (dummy root); children hang from father only so the graph stays a tree.
+          const parentUnion = marriageDummyRoot([fatherNode, motherNode]);
+          const siblingEntries = getFullSiblingEntries(person);
+          fatherNode.children = siblingEntries.map(({ person: sp }) => {
+            const isFocus = sp.id === person.id;
+            const sn = isFocus
+              ? currentNode
+              : (() => {
+                  const n = personToNode(sp, false);
+                  addDescendantGenerations(n, sp, 3);
+                  return n;
+                })();
+            return branchWithOwnSpouses(person, sp, sn, isFocus, spouseNodes);
+          });
+          bottomNode = parentUnion;
+        } else {
+          const siblingEntries = getFullSiblingEntries(person);
+          if (siblingEntries.length > 1) {
+            fatherNode.children = siblingEntries.map(({ person: sp }) => {
+              const isFocus = sp.id === person.id;
+              const sn = isFocus
+                ? currentNode
+                : (() => {
+                    const n = personToNode(sp, false);
+                    addDescendantGenerations(n, sp, 3);
+                    return n;
+                  })();
+              return branchWithOwnSpouses(person, sp, sn, isFocus, spouseNodes);
+            });
+          } else {
+            fatherNode.children = [branchWithOwnSpouses(person, person, currentNode, true, spouseNodes)];
+          }
+          bottomNode = fatherNode;
+        }
       } else {
         if (motherNode) {
-          motherNode.children = [currentNode, ...spouseNodes];
+          motherNode.children = [branchWithOwnSpouses(person, person, currentNode, true, spouseNodes)];
           bottomNode = motherNode;
         } else if (spouseNodes.length) {
           bottomNode = marriageDummyRoot([currentNode, ...spouseNodes]);
         }
       }
     } else if (motherNode) {
-      // No father but has mother: mother is the root
-      motherNode.children = [currentNode, ...spouseNodes];
+      motherNode.children = [branchWithOwnSpouses(person, person, currentNode, true, spouseNodes)];
       bottomNode = motherNode;
     } else if (spouseNodes.length) {
       bottomNode = marriageDummyRoot([currentNode, ...spouseNodes]);
@@ -1257,6 +1442,7 @@
     matches.forEach((p) => {
       const item = document.createElement("div");
       item.className = "search-result-item";
+      item.setAttribute("data-testid", "search-result-item");
       const yStr = (p.birthYear || "?") + " – " + (p.deathYear || "?");
       item.innerHTML = `
         <span class="search-result-name">${p.nameHe}</span>
