@@ -395,10 +395,7 @@
     eraDots = eraNav.querySelectorAll(".era-dot");
   }
 
-  // ── Timeline Sidebar ───────────────────────────────────
-
-  const timelineTrack = document.getElementById("timeline-track");
-  const timelineIndicator = document.getElementById("timeline-indicator");
+  // ── Year Range Calculation ─────────────────────────────
 
   const allYears = [];
   ERAS.forEach((era) => {
@@ -408,33 +405,117 @@
   const globalMinYear = Math.min(...allYears);
   const globalMaxYear = Math.max(...allYears);
 
-  function buildTimelineMarks() {
-    const trackH = timelineTrack.clientHeight;
-    if (trackH < 50) return;
+  function buildTimelineMarks() {}
 
-    timelineTrack.querySelectorAll(".tl-mark, .tl-mark-era").forEach((e) => e.remove());
+  // ── Era Floating Indicator + Sheet ─────────────────────
 
-    const step = Math.max(200, Math.ceil((globalMaxYear - globalMinYear) / 30 / 100) * 100);
-    for (let y = Math.ceil(globalMinYear / step) * step; y <= globalMaxYear; y += step) {
-      const pct = (y - globalMinYear) / (globalMaxYear - globalMinYear);
-      const mark = document.createElement("div");
-      mark.className = "tl-mark";
-      mark.style.top = (pct * 100) + "%";
-      mark.innerHTML = `<span class="tl-mark-he">${y}</span><span class="tl-mark-ce">${hebrewToCEShort(y)}</span>`;
-      timelineTrack.appendChild(mark);
-    }
+  const eraIndicator = document.getElementById("era-indicator");
+  const eraIndicatorName = document.getElementById("era-indicator-name");
+  const eraIndicatorDot = document.getElementById("era-indicator-dot");
+  const eraSheet = document.getElementById("era-sheet");
+  const eraSheetBackdrop = document.getElementById("era-sheet-backdrop");
+  const eraSheetClose = document.getElementById("era-sheet-close");
+  const eraSheetList = document.getElementById("era-sheet-list");
 
-    ERAS.forEach((era, idx) => {
-      const pct = (era.startYear - globalMinYear) / (globalMaxYear - globalMinYear);
-      const m = document.createElement("div");
-      m.className = "tl-mark-era";
-      m.style.top = (pct * 100) + "%";
-      m.textContent = era.nameHe.substring(0, 20);
-      timelineTrack.appendChild(m);
+  let eraSheetOpen = false;
+  let lastActiveEraIdx = -1;
+
+  function buildEraSheetItems() {
+    if (!eraSheetList) return;
+    eraSheetList.innerHTML = "";
+
+    ERAS.forEach(function (era, idx) {
+      var item = document.createElement("div");
+      item.className = "era-sheet-item";
+      item.setAttribute("role", "button");
+      item.setAttribute("tabindex", "0");
+      item.dataset.eraIdx = idx;
+
+      var numStr = String(idx + 1).padStart(2, "0");
+      var yearsStr = hebrewToCEShort(era.startYear) + " – " + hebrewToCEShort(era.endYear);
+
+      item.innerHTML =
+        '<span class="era-sheet-item-indicator"></span>' +
+        '<div class="era-sheet-item-info">' +
+          '<div class="era-sheet-item-name">' + era.nameHe + '</div>' +
+          '<div class="era-sheet-item-meta">' +
+            '<span>' + yearsStr + '</span>' +
+            '<span class="era-sheet-item-count">' + era.persons.length + ' דמויות</span>' +
+          '</div>' +
+        '</div>' +
+        '<span class="era-sheet-item-num">' + numStr + '</span>';
+
+      item.addEventListener("click", function () {
+        closeEraSheet();
+        var el = document.getElementById("era-" + idx);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          item.click();
+        }
+      });
+      eraSheetList.appendChild(item);
     });
   }
 
-  window.addEventListener("resize", buildTimelineMarks);
+  function openEraSheet() {
+    if (eraSheetOpen) return;
+    eraSheetOpen = true;
+    eraSheetBackdrop.classList.add("open");
+    eraSheet.classList.add("open");
+    eraIndicator.setAttribute("aria-expanded", "true");
+    focusTrap.activate(eraSheet);
+    updateEraSheetActiveItem(lastActiveEraIdx);
+
+    var activeItem = eraSheetList.querySelector(".era-sheet-item.active");
+    if (activeItem) {
+      setTimeout(function () {
+        activeItem.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    }
+  }
+
+  function closeEraSheet() {
+    if (!eraSheetOpen) return;
+    eraSheetOpen = false;
+    focusTrap.deactivate(eraSheet);
+    eraSheetBackdrop.classList.remove("open");
+    eraSheet.classList.remove("open");
+    eraIndicator.setAttribute("aria-expanded", "false");
+  }
+
+  function updateEraSheetActiveItem(activeIdx) {
+    var items = eraSheetList.querySelectorAll(".era-sheet-item");
+    items.forEach(function (item, idx) {
+      item.classList.toggle("active", idx === activeIdx);
+    });
+  }
+
+  function updateEraIndicator(activeEraIdx) {
+    var era = ERAS[activeEraIdx];
+    if (!era || !eraIndicatorName) return;
+    eraIndicatorName.textContent = era.nameHe;
+    lastActiveEraIdx = activeEraIdx;
+
+    if (eraSheetOpen) {
+      updateEraSheetActiveItem(activeEraIdx);
+    }
+  }
+
+  if (eraIndicator) {
+    eraIndicator.addEventListener("click", function () {
+      if (eraSheetOpen) closeEraSheet();
+      else openEraSheet();
+    });
+  }
+  if (eraSheetClose) eraSheetClose.addEventListener("click", closeEraSheet);
+  if (eraSheetBackdrop) eraSheetBackdrop.addEventListener("click", closeEraSheet);
+
+  function buildScrubberSegments() {
+    buildEraSheetItems();
+  }
 
   // ── Scroll-Driven Updates ──────────────────────────────
 
@@ -452,11 +533,6 @@
     hudHe.textContent = "שנת " + currentYear;
     hudCE.textContent = hebrewToCEShort(currentYear);
 
-    const trackH = timelineTrack.clientHeight;
-    const indicatorH = 60;
-    const top = scrollPct * (trackH - indicatorH);
-    timelineIndicator.style.top = top + "px";
-
     let activeEraIdx = 0;
     const vpMid = scrollTop + window.innerHeight / 3;
     eraElements.forEach((el, idx) => {
@@ -469,16 +545,17 @@
       d.classList.toggle("active", idx === activeEraIdx);
     });
 
+    updateEraIndicator(activeEraIdx);
     updateMobileNav(activeEraIdx);
     animateCards();
 
     const searchFab = document.getElementById("search-fab");
-    if (searchFab) {
-      const heroEl = document.getElementById("hero-landing");
-      if (heroEl) {
-        const heroBottom = heroEl.getBoundingClientRect().bottom;
-        searchFab.classList.toggle("visible", heroBottom < 0);
-      }
+    const heroEl = document.getElementById("hero-landing");
+    if (heroEl) {
+      const heroBottom = heroEl.getBoundingClientRect().bottom;
+      const pastHero = heroBottom < 0;
+      if (searchFab) searchFab.classList.toggle("visible", pastHero);
+      if (eraIndicator) eraIndicator.classList.toggle("visible", pastHero);
     }
   }
 
@@ -769,7 +846,8 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (ftreeWindow.classList.contains("open")) closeFamilyTreeWindow();
+      if (eraSheetOpen) closeEraSheet();
+      else if (ftreeWindow.classList.contains("open")) closeFamilyTreeWindow();
       else if (apModal.classList.contains("open")) closeAddPersonModal();
       else if (searchOverlay.classList.contains("open")) closeSearch();
       else if (detailPanel.classList.contains("open")) closeDetail();
@@ -967,7 +1045,7 @@
       return;
     }
 
-    const nodeW = 120, nodeH = 44, marginX = 20, marginY = 60;
+    const nodeW = 140, nodeH = 52, marginX = 16, marginY = 64;
 
     const root = d3.hierarchy(treeData);
     const treeLayout = d3.tree().nodeSize([nodeW + marginX, nodeH + marginY]);
@@ -987,10 +1065,13 @@
     const offsetX = -minX + nodeW / 2 + padX;
     const offsetY = -minY + padY;
 
+    const vbW = Math.max(width, 300);
+    const vbH = Math.max(height, 200);
+
     const svg = d3.select(container).append("svg")
-      .attr("width", Math.max(width, 300))
-      .attr("height", Math.max(height, 200))
-      .attr("viewBox", `0 0 ${Math.max(width, 300)} ${Math.max(height, 200)}`);
+      .attr("width", vbW)
+      .attr("height", vbH)
+      .attr("viewBox", `0 0 ${vbW} ${vbH}`);
 
     const g = svg.append("g")
       .attr("transform", `translate(${offsetX}, ${offsetY})`);
@@ -1036,22 +1117,100 @@
         }
       });
 
+    if (nodes.empty()) return;
+
     nodes.append("rect")
       .attr("width", nodeW)
       .attr("height", nodeH)
-      .attr("rx", 8)
-      .attr("ry", 8);
+      .attr("rx", 10)
+      .attr("ry", 10);
 
     nodes.append("text")
       .attr("x", nodeW / 2)
-      .attr("y", nodeH / 2 - 4)
+      .attr("y", 20)
+      .attr("text-anchor", "middle")
       .text(d => d.data.name || "");
 
     nodes.append("text")
       .attr("class", "ftree-years")
       .attr("x", nodeW / 2)
-      .attr("y", nodeH / 2 + 10)
+      .attr("y", 36)
+      .attr("text-anchor", "middle")
       .text(d => d.data._years || "");
+
+    nodes.filter(d => d.data._title)
+      .append("text")
+      .attr("class", "ftree-title")
+      .attr("x", nodeW / 2)
+      .attr("y", 48)
+      .attr("text-anchor", "middle")
+      .text(d => d.data._title);
+
+    setupDragToPan(container);
+
+    var currentD = root.descendants().find(function(d) { return d.data._isCurrent; });
+    requestAnimationFrame(function() {
+      if (currentD) {
+        var cx = currentD.x + offsetX;
+        var cy = currentD.y + offsetY;
+        container.scrollLeft = Math.max(0, cx - container.clientWidth / 2);
+        container.scrollTop = Math.max(0, cy - container.clientHeight / 2);
+      } else {
+        container.scrollLeft = Math.max(0, (container.scrollWidth - container.clientWidth) / 2);
+        container.scrollTop = 0;
+      }
+    });
+  }
+
+  function setupDragToPan(el) {
+    if (el._dragPanWired) return;
+    el._dragPanWired = true;
+    let dragging = false, startX = 0, startY = 0, scrollL = 0, scrollT = 0;
+
+    el.addEventListener("mousedown", function(e) {
+      if (e.target.closest(".ftree-node")) return;
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      scrollL = el.scrollLeft;
+      scrollT = el.scrollTop;
+      el.classList.add("is-dragging");
+      e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", function(e) {
+      if (!dragging) return;
+      el.scrollLeft = scrollL - (e.clientX - startX);
+      el.scrollTop = scrollT - (e.clientY - startY);
+    });
+
+    document.addEventListener("mouseup", function() {
+      if (!dragging) return;
+      dragging = false;
+      el.classList.remove("is-dragging");
+    });
+
+    el.addEventListener("touchstart", function(e) {
+      if (e.target.closest(".ftree-node")) return;
+      if (e.touches.length !== 1) return;
+      dragging = true;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      scrollL = el.scrollLeft;
+      scrollT = el.scrollTop;
+      el.classList.add("is-dragging");
+    }, { passive: true });
+
+    el.addEventListener("touchmove", function(e) {
+      if (!dragging) return;
+      el.scrollLeft = scrollL - (e.touches[0].clientX - startX);
+      el.scrollTop = scrollT - (e.touches[0].clientY - startY);
+    }, { passive: true });
+
+    el.addEventListener("touchend", function() {
+      dragging = false;
+      el.classList.remove("is-dragging");
+    });
   }
 
   // Recursively attach up to N generations of children (N=3: children, grandchildren, great-grandchildren).
@@ -1122,7 +1281,7 @@
   function buildFamilyTreeData(person) {
     // One generation above (parents), three below (children through great-grandchildren).
     const currentNode = personToNode(person, true);
-    addDescendantGenerations(currentNode, person, 3);
+    addDescendantGenerations(currentNode, person, 2);
 
     const spouseNodes = buildSpouseNodesForTree(person);
 
@@ -1152,9 +1311,9 @@
               ? currentNode
               : (() => {
                   const n = personToNode(sp, false);
-                  addDescendantGenerations(n, sp, 3);
-                  return n;
-                })();
+                  addDescendantGenerations(n, sp, 2);
+                    return n;
+                  })();
             return branchWithOwnSpouses(person, sp, sn, isFocus, spouseNodes);
           });
           bottomNode = parentUnion;
@@ -1167,7 +1326,7 @@
                 ? currentNode
                 : (() => {
                     const n = personToNode(sp, false);
-                    addDescendantGenerations(n, sp, 3);
+                    addDescendantGenerations(n, sp, 2);
                     return n;
                   })();
               return branchWithOwnSpouses(person, sp, sn, isFocus, spouseNodes);
@@ -1202,7 +1361,10 @@
       name: person.nameHe,
       _personId: person.id,
       _years: bStr + "–" + dStr,
-      _isCurrent: !!isCurrent
+      _isCurrent: !!isCurrent,
+      _title: person.title || "",
+      _nameEn: person.nameEn || "",
+      _initial: person.nameHe ? person.nameHe.charAt(0) : "?"
     };
   }
 
@@ -1226,6 +1388,7 @@
     ftreeWindowTitle.textContent = "עץ משפחה — " + person.nameHe;
     ftreeWindowBody.dataset.currentPersonId = person.id;
     ftreeWindowBack.disabled = ftreeHistory.length === 0;
+    ftreeZoom = 1;
 
     renderFamilyTree(person, {
       container: ftreeWindowBody,
@@ -1316,6 +1479,59 @@
       document.removeEventListener("touchend", onDragEnd);
     }
   })();
+
+  // ── Family Tree Zoom ────────────────────────────────────
+  var ftreeZoom = 1;
+  var ftreeZoomIn = document.getElementById("ftree-zoom-in");
+  var ftreeZoomOut = document.getElementById("ftree-zoom-out");
+
+  function applyFtreeZoom() {
+    var svgEl = ftreeWindowBody.querySelector("svg");
+    if (!svgEl) return;
+    var baseW = parseFloat(svgEl.dataset.baseW || svgEl.getAttribute("width"));
+    var baseH = parseFloat(svgEl.dataset.baseH || svgEl.getAttribute("height"));
+    if (!svgEl.dataset.baseW) {
+      svgEl.dataset.baseW = baseW;
+      svgEl.dataset.baseH = baseH;
+    }
+    svgEl.setAttribute("width", baseW * ftreeZoom);
+    svgEl.setAttribute("height", baseH * ftreeZoom);
+  }
+
+  if (ftreeZoomIn) {
+    ftreeZoomIn.addEventListener("click", function() {
+      ftreeZoom = Math.min(3, ftreeZoom + 0.25);
+      applyFtreeZoom();
+    });
+  }
+  if (ftreeZoomOut) {
+    ftreeZoomOut.addEventListener("click", function() {
+      ftreeZoom = Math.max(0.25, ftreeZoom - 0.25);
+      applyFtreeZoom();
+    });
+  }
+
+  // ── Fullscreen toggle ──
+  var ftreeFullscreenBtn = document.getElementById("ftree-fullscreen");
+  var ftreeExpandSvg = '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+  var ftreeCollapseSvg = '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="10" y1="14" x2="3" y2="21"/>';
+
+  if (ftreeFullscreenBtn) {
+    ftreeFullscreenBtn.addEventListener("click", function() {
+      var isFs = ftreeWindow.classList.toggle("ftree-fullscreen");
+      ftreeFullscreenBtn.querySelector("svg").innerHTML = isFs ? ftreeCollapseSvg : ftreeExpandSvg;
+      ftreeFullscreenBtn.setAttribute("aria-label", isFs ? "יציאה ממסך מלא" : "מסך מלא");
+    });
+  }
+
+  // ── Mouse wheel zoom ──
+  ftreeWindowBody.addEventListener("wheel", function(e) {
+    if (!ftreeWindow.classList.contains("open")) return;
+    e.preventDefault();
+    var delta = e.deltaY < 0 ? 0.1 : -0.1;
+    ftreeZoom = Math.min(3, Math.max(0.25, ftreeZoom + delta));
+    applyFtreeZoom();
+  }, { passive: false });
 
   // ── Contribute Form ────────────────────────────────────
 
@@ -1833,9 +2049,8 @@
     const yStr = (p.birthYear || "?") + " – " + (p.deathYear || "?");
     const titleStr = p.title ? ` | ${p.title}` : "";
     const summarySnippet = p.summary ? p.summary.substring(0, 60) + "..." : "";
-    const initial = p.nameHe.charAt(0);
     item.innerHTML = `
-      <div class="search-result-avatar">${initial}</div>
+      <div class="search-result-avatar">${personAvatarInitial(p)}</div>
       <div class="search-result-info">
         <span class="search-result-name">${p.nameHe}</span>
         <div class="search-result-meta">${yStr}${titleStr}</div>
@@ -1978,14 +2193,14 @@
       gridContainer.classList.add("active");
       viewGridBtn.classList.add("active");
       viewTimelineBtn.classList.remove("active");
-      document.getElementById("era-nav").style.display = "none";
+      document.body.classList.add("timeline-active");
       buildGridView();
     } else {
       timelineView.style.display = "";
       gridContainer.classList.remove("active");
       viewTimelineBtn.classList.add("active");
       viewGridBtn.classList.remove("active");
-      document.getElementById("era-nav").style.display = "";
+      document.body.classList.add("timeline-active");
       setTimeout(drawTree, 100);
     }
   }
@@ -2396,12 +2611,15 @@
 
     renderEras();
     rebuildSearchIndex();
+    buildScrubberSegments();
 
     initHero();
     buildEraCarousel();
     buildMobileNav();
     if (window.innerWidth <= 768) {
       switchView("grid");
+    } else {
+      document.body.classList.add("timeline-active");
     }
     buildSearchFilters();
     checkUrlForPerson();
