@@ -1427,6 +1427,14 @@
     searchResults.innerHTML = "";
     activeSearchFilter = "all";
     buildSearchFilters();
+
+    const headerText = document.getElementById("search-header-text");
+    if (headerText) {
+      let total = 0;
+      ERAS.forEach(e => { total += e.persons.length; });
+      headerText.textContent = `מצאו כל דמות מ-${total} דמויות לאורך ההיסטוריה`;
+    }
+
     setTimeout(() => searchInput.focus(), 100);
     document.body.style.overflow = "hidden";
   }
@@ -1440,36 +1448,42 @@
   searchCloseBtn.addEventListener("click", closeSearch);
 
   let activeSearchFilter = "all";
-  const ERA_FILTER_PREFIX = "era:";
-  const ROLE_FILTERS = [
-    { key: "all", label: "הכל" },
-    { key: "צדיק", label: "צדיק" },
-    { key: "נביא", label: "נביא" },
-    { key: "מלך", label: "מלך" },
-    { key: "שופט", label: "שופט" },
-    { key: "כהן", label: "כהן" }
-  ];
+
+  function getSearchFilters() {
+    const roleFilters = [
+      { key: "all", label: "הכל" },
+      { key: "צדיק", label: "צדיק" },
+      { key: "נביא", label: "נביא" },
+      { key: "מלך", label: "מלך" },
+      { key: "שופט", label: "שופט" },
+      { key: "כהן", label: "כהן" }
+    ];
+    const eraFilters = ERAS.map(era => ({
+      key: "era:" + era.id,
+      label: "תקופה: " + (era.nameHe.length > 12 ? era.nameHe.substring(0, 12) + "…" : era.nameHe)
+    }));
+    return [...roleFilters, ...eraFilters];
+  }
 
   function buildSearchFilters() {
-    const host = document.getElementById("search-filters-host");
-    if (!host) return;
-    host.innerHTML = "";
-    const spec = [
-      ...ROLE_FILTERS,
-      ...ERAS.map((era, i) => ({ key: ERA_FILTER_PREFIX + i, label: "תקופה: " + era.nameHe }))
-    ];
-    spec.forEach((f) => {
+    let filtersDiv = document.querySelector(".search-filters");
+    if (!filtersDiv) {
+      filtersDiv = document.createElement("div");
+      filtersDiv.className = "search-filters";
+      searchInput.parentNode.insertBefore(filtersDiv, searchResults);
+    }
+    filtersDiv.innerHTML = "";
+    getSearchFilters().forEach(f => {
       const btn = document.createElement("button");
-      btn.type = "button";
       btn.className = "search-filter-btn" + (f.key === activeSearchFilter ? " active" : "");
       btn.textContent = f.label;
       btn.addEventListener("click", () => {
         activeSearchFilter = f.key;
-        host.querySelectorAll(".search-filter-btn").forEach((b) => b.classList.remove("active"));
+        filtersDiv.querySelectorAll(".search-filter-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         runSearch();
       });
-      host.appendChild(btn);
+      filtersDiv.appendChild(btn);
     });
   }
 
@@ -1499,13 +1513,12 @@
     );
 
     if (activeSearchFilter !== "all") {
-      if (activeSearchFilter.startsWith(ERA_FILTER_PREFIX)) {
-        const eraIdx = parseInt(activeSearchFilter.slice(ERA_FILTER_PREFIX.length), 10);
-        if (!Number.isNaN(eraIdx)) {
-          matches = matches.filter((p) => p.eraIdx === eraIdx);
-        }
+      if (activeSearchFilter.startsWith("era:")) {
+        const eraId = activeSearchFilter.replace("era:", "");
+        const eraIdNum = isNaN(Number(eraId)) ? eraId : Number(eraId);
+        matches = matches.filter(p => p.era.id === eraIdNum || p.era.id === eraId);
       } else {
-        matches = matches.filter((p) => p.title && p.title.includes(activeSearchFilter));
+        matches = matches.filter(p => p.title && p.title.includes(activeSearchFilter));
       }
     }
 
@@ -1544,41 +1557,22 @@
     }
   }
 
-  function searchNameFirstLetter(nameHe) {
-    if (!nameHe) return "?";
-    const m = nameHe.match(/[\u0590-\u05FF]/);
-    return m ? m[0] : nameHe.charAt(0);
-  }
-
-  function escapeSearchHtml(str) {
-    return String(str ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   function buildSearchResultItem(p) {
     const item = document.createElement("div");
     item.className = "search-result-item";
     item.setAttribute("data-testid", "search-result-item");
     const yStr = (p.birthYear || "?") + " – " + (p.deathYear || "?");
-    const metaParts = [yStr];
-    if (p.title) metaParts.push(p.title);
-    if (p.summary) {
-      const snip = p.summary.length > 100 ? p.summary.substring(0, 100) + "…" : p.summary;
-      metaParts.push(snip);
-    }
-    const metaLine = metaParts.map(escapeSearchHtml).join(" | ");
-    const av = escapeSearchHtml(searchNameFirstLetter(p.nameHe));
-    const eraFull = escapeSearchHtml(p.era.nameHe);
+    const titleStr = p.title ? ` | ${p.title}` : "";
+    const summarySnippet = p.summary ? p.summary.substring(0, 60) + "..." : "";
+    const initial = p.nameHe.charAt(0);
     item.innerHTML = `
-      <div class="search-hit-avatar" aria-hidden="true">${av}</div>
-      <div class="search-hit-info">
-        <div class="search-hit-name">${escapeSearchHtml(p.nameHe)}</div>
-        <div class="search-hit-meta">${metaLine}</div>
+      <div class="search-result-avatar">${initial}</div>
+      <div class="search-result-info">
+        <span class="search-result-name">${p.nameHe}</span>
+        <div class="search-result-meta">${yStr}${titleStr}</div>
+        ${summarySnippet ? `<div class="search-result-meta">${summarySnippet}</div>` : ""}
       </div>
-      <span class="search-hit-era">${eraFull}</span>
+      <span class="search-result-era">${p.era.nameHe.substring(0, 15)}</span>
     `;
     item.addEventListener("click", () => {
       closeSearch();
