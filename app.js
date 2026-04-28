@@ -1440,6 +1440,7 @@
   searchCloseBtn.addEventListener("click", closeSearch);
 
   let activeSearchFilter = "all";
+  const ERA_FILTER_PREFIX = "era:";
   const ROLE_FILTERS = [
     { key: "all", label: "הכל" },
     { key: "צדיק", label: "צדיק" },
@@ -1450,24 +1451,25 @@
   ];
 
   function buildSearchFilters() {
-    let filtersDiv = document.querySelector(".search-filters");
-    if (!filtersDiv) {
-      filtersDiv = document.createElement("div");
-      filtersDiv.className = "search-filters";
-      searchInput.parentNode.insertBefore(filtersDiv, searchResults);
-    }
-    filtersDiv.innerHTML = "";
-    ROLE_FILTERS.forEach(f => {
+    const host = document.getElementById("search-filters-host");
+    if (!host) return;
+    host.innerHTML = "";
+    const spec = [
+      ...ROLE_FILTERS,
+      ...ERAS.map((era, i) => ({ key: ERA_FILTER_PREFIX + i, label: "תקופה: " + era.nameHe }))
+    ];
+    spec.forEach((f) => {
       const btn = document.createElement("button");
+      btn.type = "button";
       btn.className = "search-filter-btn" + (f.key === activeSearchFilter ? " active" : "");
       btn.textContent = f.label;
       btn.addEventListener("click", () => {
         activeSearchFilter = f.key;
-        filtersDiv.querySelectorAll(".search-filter-btn").forEach(b => b.classList.remove("active"));
+        host.querySelectorAll(".search-filter-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         runSearch();
       });
-      filtersDiv.appendChild(btn);
+      host.appendChild(btn);
     });
   }
 
@@ -1497,7 +1499,14 @@
     );
 
     if (activeSearchFilter !== "all") {
-      matches = matches.filter(p => p.title && p.title.includes(activeSearchFilter));
+      if (activeSearchFilter.startsWith(ERA_FILTER_PREFIX)) {
+        const eraIdx = parseInt(activeSearchFilter.slice(ERA_FILTER_PREFIX.length), 10);
+        if (!Number.isNaN(eraIdx)) {
+          matches = matches.filter((p) => p.eraIdx === eraIdx);
+        }
+      } else {
+        matches = matches.filter((p) => p.title && p.title.includes(activeSearchFilter));
+      }
     }
 
     matches = dedupeSearchByPersonId(matches);
@@ -1520,7 +1529,7 @@
     if (exact.length > 0) {
       const title = document.createElement("div");
       title.className = "search-result-group-title";
-      title.textContent = `התאמות (${exact.length})`;
+      title.textContent = `התאמות מדויקות (${exact.length})`;
       searchResults.appendChild(title);
     }
 
@@ -1535,20 +1544,41 @@
     }
   }
 
+  function searchNameFirstLetter(nameHe) {
+    if (!nameHe) return "?";
+    const m = nameHe.match(/[\u0590-\u05FF]/);
+    return m ? m[0] : nameHe.charAt(0);
+  }
+
+  function escapeSearchHtml(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   function buildSearchResultItem(p) {
     const item = document.createElement("div");
     item.className = "search-result-item";
     item.setAttribute("data-testid", "search-result-item");
     const yStr = (p.birthYear || "?") + " – " + (p.deathYear || "?");
-    const titleStr = p.title ? ` | ${p.title}` : "";
-    const summarySnippet = p.summary ? p.summary.substring(0, 60) + "..." : "";
+    const metaParts = [yStr];
+    if (p.title) metaParts.push(p.title);
+    if (p.summary) {
+      const snip = p.summary.length > 100 ? p.summary.substring(0, 100) + "…" : p.summary;
+      metaParts.push(snip);
+    }
+    const metaLine = metaParts.map(escapeSearchHtml).join(" | ");
+    const av = escapeSearchHtml(searchNameFirstLetter(p.nameHe));
+    const eraFull = escapeSearchHtml(p.era.nameHe);
     item.innerHTML = `
-      <div class="search-result-info">
-        <span class="search-result-name">${p.nameHe}</span>
-        <div class="search-result-meta">${yStr}${titleStr}</div>
-        ${summarySnippet ? `<div class="search-result-meta">${summarySnippet}</div>` : ""}
+      <div class="search-hit-avatar" aria-hidden="true">${av}</div>
+      <div class="search-hit-info">
+        <div class="search-hit-name">${escapeSearchHtml(p.nameHe)}</div>
+        <div class="search-hit-meta">${metaLine}</div>
       </div>
-      <span class="search-result-era">${p.era.nameHe.substring(0, 15)}</span>
+      <span class="search-hit-era">${eraFull}</span>
     `;
     item.addEventListener("click", () => {
       closeSearch();

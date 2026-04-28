@@ -53,11 +53,18 @@
     </div>
   </div>
 
-  <!-- Search Overlay -->
+  <!-- Search Overlay (layout aligned with ux-demos “Enhanced Search”) -->
   <div id="search-overlay" class="search-overlay" data-testid="search-overlay">
     <div class="search-inner">
-      <input id="search-input" type="text" class="search-input" data-testid="search-input" placeholder="חפש לפי שם..." autocomplete="off">
-      <button id="search-close" class="search-close" aria-label="סגור">&times;</button>
+      <button id="search-close" type="button" class="search-close" aria-label="סגור">&times;</button>
+      <div class="search-panel-head">
+        <h2 class="search-panel-title">מצאו כל דמות מ-4,000 שנות היסטוריה</h2>
+        <div class="search-field">
+          <input id="search-input" type="text" class="search-input" data-testid="search-input" placeholder="חפש לפי שם עברי או אנגלי…" autocomplete="off">
+          <svg class="search-field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        </div>
+      </div>
+      <div id="search-filters-host" class="search-filters"></div>
       <div id="search-results" class="search-results" data-testid="search-results"></div>
     </div>
   </div>
