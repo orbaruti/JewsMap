@@ -16,7 +16,7 @@ html:not([data-theme]) {
   --gold-dim: #8B7A5A;
   --gold-glow: rgba(212,184,150,0.35);
   --text: #EDE4D4;
-  --text-muted: #7B7490;
+  --text-muted: #9B94B0;
   --accent: #3D6E9E;
   --accent-light: #5B9BD5;
   --green: #4a8a4a;
@@ -32,7 +32,7 @@ html[data-theme="light"] {
   --gold-dim: #C4A96A;
   --gold-glow: rgba(122,101,64,0.15);
   --text: #3D3024;
-  --text-muted: #9A8B74;
+  --text-muted: #7A6B54;
   --accent: #4A7393;
   --accent-light: #5C6D4A;
   --green: #3a7a3a;
@@ -40,7 +40,12 @@ html[data-theme="light"] {
 }
 
 html { background: var(--bg); color: var(--text); }
-body { font-family: var(--font-body); min-height: 100vh; }
+body {
+  font-family: var(--font-body);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: env(safe-area-inset-bottom);
+}
 
 /* ============ GATE (Auth Check) ============ */
 .admin-gate {
@@ -328,8 +333,97 @@ body { font-family: var(--font-body); min-height: 100vh; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 640px) {
-  .admin-header { flex-direction: column; gap: 10px; align-items: flex-start; }
-  .admin-toolbar { flex-direction: column; align-items: flex-start; }
-  .sub-card { flex-direction: column; }
-  .modal { width: 96%; padding: 20px 16px; }
+  .admin-app { padding: 0 12px 40px; }
+
+  .admin-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 16px 0;
+  }
+  .admin-header-right { width: 100%; justify-content: space-between; }
+  .admin-header-left { width: 100%; justify-content: space-between; }
+
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .admin-filters {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .filter-select {
+    min-height: 44px;
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .sub-card {
+    flex-direction: column;
+    padding: 14px;
+    gap: 10px;
+    border-radius: 12px;
+  }
+  .sub-card-top { gap: 6px; }
+  .sub-person-name { font-size: 15px; }
+  .sub-type-badge {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+  .status-badge {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 12px;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 16px 16px 0 0;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    padding: 20px 16px 32px;
+  }
+  .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 8px;
+    left: 8px;
+  }
+  .modal-btns { gap: 8px; }
+  .modal-btn {
+    min-height: 48px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+  .modal-note {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .admin-signout-btn {
+    min-height: 44px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .gate-btn {
+    min-height: 48px;
+    padding: 14px 32px;
+    font-size: 16px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 280px;
+  }
+  .gate-title { font-size: 26px; }
 }
