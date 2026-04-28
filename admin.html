@@ -35,7 +35,7 @@
     <div class="admin-toolbar">
       <div class="admin-filters">
         <label class="filter-label">סטטוס:</label>
-        <select id="filter-status" class="filter-select">
+        <select id="filter-status" class="filter-select" aria-label="סטטוס">
           <option value="pending">ממתין</option>
           <option value="approved">אושר</option>
           <option value="rejected">נדחה</option>
@@ -43,7 +43,7 @@
         </select>
 
         <label class="filter-label">סוג:</label>
-        <select id="filter-type" class="filter-select">
+        <select id="filter-type" class="filter-select" aria-label="סוג">
           <option value="all">הכל</option>
           <option value="new_person">אדם חדש</option>
           <option value="edit_person">עריכת אדם</option>
@@ -51,16 +51,16 @@
           <option value="add_note">הערה</option>
         </select>
       </div>
-      <div id="admin-stats" class="admin-stats"></div>
+      <div id="admin-stats" class="admin-stats" aria-live="polite"></div>
     </div>
 
-    <div id="submissions-list" class="submissions-list">
+    <div id="submissions-list" class="submissions-list" aria-live="polite">
       <p class="loading-text">טוען...</p>
     </div>
 
     <!-- Detail Modal -->
     <div id="modal-backdrop" class="modal-backdrop"></div>
-    <div id="modal" class="modal">
+    <div id="modal" class="modal" role="dialog" aria-modal="true">
       <button id="modal-close" class="modal-close">&times;</button>
       <div id="modal-body" class="modal-body"></div>
       <div class="modal-actions">

@@ -17,7 +17,7 @@
   <!-- Top Toolbar (all icons in one flex row — no overlap) -->
   <div class="top-toolbar" data-testid="top-toolbar">
     <div class="toolbar-start">
-      <button id="search-toggle" class="icon-btn search-toggle" type="button" data-testid="search-toggle" aria-label="חיפוש">
+      <button id="search-toggle" class="icon-btn search-toggle" type="button" data-testid="search-toggle" aria-label="חיפוש" aria-expanded="false">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
       </button>
       <button id="theme-toggle" class="icon-btn theme-toggle" aria-label="החלף ערכת נושא">
@@ -27,20 +27,23 @@
       <button id="add-person-toggle" class="icon-btn add-person-toggle" style="display:none;" aria-label="הוסף אישיות">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <button id="bookmarks-toggle" class="icon-btn" aria-label="מועדפים">
+      <button id="bookmarks-toggle" class="icon-btn" aria-label="מועדפים" aria-expanded="false">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
       </button>
     </div>
 
-    <div id="year-hud" class="year-hud" data-testid="year-hud" aria-live="polite">
-      <span id="hud-he-year" class="hud-year"></span>
-      <span class="hud-sep">/</span>
-      <span id="hud-ce-year" class="hud-year hud-year-ce"></span>
+    <div class="year-hud-wrap">
+      <div id="year-hud" class="year-hud" data-testid="year-hud" aria-live="polite">
+        <span id="hud-he-year" class="hud-year"></span>
+        <span class="hud-sep">/</span>
+        <span id="hud-ce-year" class="hud-year hud-year-ce"></span>
+      </div>
+      <div id="hud-tooltip" class="hud-tooltip">התאריכים מוצגים בשנה העברית ובמניין הספירה</div>
     </div>
 
     <div class="toolbar-end">
       <div id="auth-area" class="auth-area">
-        <button id="auth-btn" class="auth-btn" aria-label="התחברות">
+        <button id="auth-btn" class="auth-btn" aria-label="התחברות" aria-expanded="false">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span id="auth-label">התחבר</span>
         </button>
@@ -54,11 +57,11 @@
   </div>
 
   <!-- Search Overlay -->
-  <div id="search-overlay" class="search-overlay" data-testid="search-overlay">
+  <div id="search-overlay" class="search-overlay" data-testid="search-overlay" role="dialog" aria-modal="true" aria-label="חיפוש">
     <div class="search-inner">
       <div class="search-header-text" id="search-header-text"></div>
       <div class="search-input-wrap">
-        <input id="search-input" type="text" class="search-input" data-testid="search-input" placeholder="חפש לפי שם..." autocomplete="off">
+        <input id="search-input" type="text" class="search-input" data-testid="search-input" placeholder="חפש לפי שם..." autocomplete="off" aria-label="חפש דמות לפי שם">
         <button id="search-close" class="search-close" aria-label="סגור">&times;</button>
       </div>
       <div id="search-results" class="search-results" data-testid="search-results"></div>
@@ -172,8 +175,12 @@
 
   <!-- Detail Panel -->
   <div id="detail-backdrop" class="detail-backdrop"></div>
-  <aside id="detail-panel" class="detail-panel" data-testid="detail-panel">
+  <aside id="detail-panel" class="detail-panel" data-testid="detail-panel" role="dialog" aria-modal="true" aria-label="פרטי אישיות">
     <button id="detail-close" class="detail-close" aria-label="סגור">&times;</button>
+    <button id="detail-back" class="detail-back" aria-label="חזור" style="display:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span id="detail-back-label"></span>
+    </button>
     <div class="detail-avatar-wrap">
       <div id="detail-avatar" class="detail-avatar"></div>
     </div>
@@ -209,32 +216,32 @@
 
     <!-- READ-ONLY VIEW -->
     <div id="detail-view" class="detail-view">
-      <div class="detail-tabs">
-        <button class="detail-tab active" data-tab="summary">סיכום</button>
-        <button class="detail-tab" data-tab="journey">מסע חיים</button>
-        <button class="detail-tab" data-tab="midrash">מדרש</button>
-        <button class="detail-tab" data-tab="sources">מקורות</button>
-        <button class="detail-tab" data-tab="notes">הערות</button>
-        <button class="detail-tab" data-tab="family">עץ משפחה</button>
+      <div class="detail-tabs" role="tablist">
+        <button class="detail-tab active" data-tab="summary" role="tab" aria-selected="true" aria-controls="tab-summary" id="tab-btn-summary">סיכום</button>
+        <button class="detail-tab" data-tab="journey" role="tab" aria-selected="false" aria-controls="tab-journey" id="tab-btn-journey">מסע חיים</button>
+        <button class="detail-tab" data-tab="midrash" role="tab" aria-selected="false" aria-controls="tab-midrash" id="tab-btn-midrash">מדרש</button>
+        <button class="detail-tab" data-tab="sources" role="tab" aria-selected="false" aria-controls="tab-sources" id="tab-btn-sources">מקורות</button>
+        <button class="detail-tab" data-tab="notes" role="tab" aria-selected="false" aria-controls="tab-notes" id="tab-btn-notes">הערות</button>
+        <button class="detail-tab" data-tab="family" role="tab" aria-selected="false" aria-controls="tab-family" id="tab-btn-family">עץ משפחה</button>
       </div>
       <div class="detail-tab-content">
-        <div id="tab-summary" class="tab-pane active">
+        <div id="tab-summary" class="tab-pane active" role="tabpanel" aria-labelledby="tab-btn-summary">
           <p class="tab-placeholder" data-testid="detail-summary">תוכן הסיכום יתמלא בהמשך...</p>
         </div>
-        <div id="tab-journey" class="tab-pane">
+        <div id="tab-journey" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-journey">
           <p class="tab-placeholder">מסע חיים — יתמלא כשנאסוף אירועים. (דוגמה: אברהם אבינו.)</p>
         </div>
-        <div id="tab-midrash" class="tab-pane">
+        <div id="tab-midrash" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-midrash">
           <p class="tab-placeholder">תוכן המדרש יתמלא בהמשך...</p>
         </div>
-        <div id="tab-sources" class="tab-pane">
+        <div id="tab-sources" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-sources">
           <p class="tab-placeholder">מקורות יתמלאו בהמשך...</p>
         </div>
-        <div id="tab-notes" class="tab-pane">
+        <div id="tab-notes" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-notes">
           <div id="notes-list"></div>
           <p id="notes-placeholder" class="tab-placeholder">הערות יתמלאו בהמשך...</p>
         </div>
-        <div id="tab-family" class="tab-pane">
+        <div id="tab-family" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-family">
           <div id="family-tree-container"></div>
         </div>
       </div>
@@ -248,13 +255,13 @@
       </div>
 
       <div id="contribute-form" class="contribute-form">
-        <div class="contribute-tabs">
-          <button class="contrib-tab active" data-ctype="edit_person">עריכה</button>
-          <button class="contrib-tab" data-ctype="add_source">מקור</button>
-          <button class="contrib-tab" data-ctype="add_note">הערה</button>
+        <div class="contribute-tabs" role="tablist">
+          <button class="contrib-tab active" data-ctype="edit_person" role="tab" aria-selected="true" aria-controls="contrib-edit" id="ctab-btn-edit">עריכה</button>
+          <button class="contrib-tab" data-ctype="add_source" role="tab" aria-selected="false" aria-controls="contrib-source" id="ctab-btn-source">מקור</button>
+          <button class="contrib-tab" data-ctype="add_note" role="tab" aria-selected="false" aria-controls="contrib-note" id="ctab-btn-note">הערה</button>
         </div>
 
-        <div id="contrib-edit" class="contrib-pane active">
+        <div id="contrib-edit" class="contrib-pane active" role="tabpanel" aria-labelledby="ctab-btn-edit">
           <label class="contrib-label">סיכום</label>
           <textarea id="contrib-summary" class="contrib-input" rows="3" placeholder="הוסף או ערוך סיכום..."></textarea>
           <label class="contrib-label">מדרש</label>
@@ -263,12 +270,12 @@
           <input id="contrib-title" class="contrib-input" type="text" placeholder="לדוגמה: צדיק, נביא...">
         </div>
 
-        <div id="contrib-source" class="contrib-pane">
+        <div id="contrib-source" class="contrib-pane" role="tabpanel" aria-labelledby="ctab-btn-source">
           <label class="contrib-label">מקור חדש</label>
           <textarea id="contrib-source-text" class="contrib-input" rows="4" placeholder="הוסף מקור או הפניה..."></textarea>
         </div>
 
-        <div id="contrib-note" class="contrib-pane">
+        <div id="contrib-note" class="contrib-pane" role="tabpanel" aria-labelledby="ctab-btn-note">
           <label class="contrib-label">הערה</label>
           <textarea id="contrib-note-text" class="contrib-input" rows="4" placeholder="הוסף הערה, תובנה..."></textarea>
         </div>
@@ -280,7 +287,7 @@
   </aside>
 
   <!-- Floating Family Tree Window -->
-  <div id="ftree-window" class="ftree-window">
+  <div id="ftree-window" class="ftree-window" role="dialog" aria-modal="true" aria-label="עץ משפחה">
     <div class="ftree-window-header" id="ftree-window-header">
       <button id="ftree-window-back" class="ftree-window-back" aria-label="חזור" disabled>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -293,7 +300,7 @@
 
   <!-- Add Person Modal -->
   <div id="add-person-backdrop" class="add-person-backdrop"></div>
-  <div id="add-person-modal" class="add-person-modal">
+  <div id="add-person-modal" class="add-person-modal" role="dialog" aria-modal="true" aria-label="הוסף אישיות">
     <div class="add-person-modal-header">
       <h2 class="add-person-modal-title">הוסף אישיות</h2>
       <button id="add-person-close" class="add-person-close" aria-label="סגור">&times;</button>
@@ -315,7 +322,11 @@
       </div>
 
       <div class="add-person-section">
-        <h3 class="add-person-section-title">שדות אופציונליים</h3>
+        <button type="button" class="add-person-section-toggle" id="ap-optional-toggle" aria-expanded="false">
+          <h3 class="add-person-section-title">שדות אופציונליים</h3>
+          <svg class="ap-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="add-person-optional-fields" id="ap-optional-fields" style="display:none;">
         <div class="add-person-row">
           <div class="add-person-field">
             <label class="add-person-label" for="ap-birth-year">שנת לידה (עברית)</label>
@@ -330,14 +341,24 @@
         <label class="add-person-label" for="ap-title">תואר</label>
         <input id="ap-title" class="add-person-input" type="text" placeholder="לדוגמה: צדיק, נביא, מלך...">
 
-        <label class="add-person-label" for="ap-father-id">מזהה אב (ID)</label>
-        <input id="ap-father-id" class="add-person-input" type="text" placeholder="לדוגמה: avraham-avinu" dir="ltr">
+        <label class="add-person-label" for="ap-father-id">אב</label>
+        <div class="ap-autocomplete-wrap">
+          <input id="ap-father-id" class="add-person-input ap-autocomplete-input" type="text" placeholder="הקלד שם לחיפוש..." autocomplete="off">
+          <div id="ap-father-results" class="ap-autocomplete-results"></div>
+        </div>
 
-        <label class="add-person-label" for="ap-mother-id">מזהה אם (ID)</label>
-        <input id="ap-mother-id" class="add-person-input" type="text" placeholder="לדוגמה: sarah-imenu" dir="ltr">
+        <label class="add-person-label" for="ap-mother-id">אם</label>
+        <div class="ap-autocomplete-wrap">
+          <input id="ap-mother-id" class="add-person-input ap-autocomplete-input" type="text" placeholder="הקלד שם לחיפוש..." autocomplete="off">
+          <div id="ap-mother-results" class="ap-autocomplete-results"></div>
+        </div>
 
-        <label class="add-person-label" for="ap-spouse-ids">מזהי בני/בנות זוג (מופרדים בפסיקים)</label>
-        <input id="ap-spouse-ids" class="add-person-input" type="text" placeholder="לדוגמה: sarah-imenu, hagar" dir="ltr">
+        <label class="add-person-label" for="ap-spouse-ids">בני/בנות זוג</label>
+        <div class="ap-autocomplete-wrap">
+          <input id="ap-spouse-ids" class="add-person-input ap-autocomplete-input" type="text" placeholder="הקלד שם לחיפוש..." autocomplete="off">
+          <div id="ap-spouse-results" class="ap-autocomplete-results"></div>
+          <div id="ap-spouse-tags" class="ap-tags"></div>
+        </div>
 
         <label class="add-person-label" for="ap-summary">סיכום</label>
         <textarea id="ap-summary" class="add-person-input" rows="3" placeholder="סיכום קצר על האישיות..."></textarea>
@@ -347,6 +368,7 @@
 
         <label class="add-person-label" for="ap-sources">מקורות</label>
         <textarea id="ap-sources" class="add-person-input" rows="3" placeholder="מקורות והפניות..."></textarea>
+        </div>
       </div>
 
       <button id="ap-submit" class="add-person-submit-btn" disabled>שלח לאישור</button>
@@ -355,13 +377,17 @@
   </div>
 
   <!-- Bookmarks Panel -->
-  <div id="bookmarks-panel" class="bookmarks-panel">
+  <div id="bookmarks-panel" class="bookmarks-panel" role="dialog" aria-label="מועדפים">
     <div class="bookmarks-panel-header">
       <span class="bookmarks-panel-title">מועדפים</span>
       <button id="bookmarks-panel-close" class="bookmarks-panel-close" aria-label="סגור">&times;</button>
     </div>
     <div id="bookmarks-list" class="bookmarks-list"></div>
   </div>
+
+  <button id="search-fab" class="search-fab" aria-label="חיפוש">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+  </button>
 
   <!-- Mobile Bottom Navigation -->
   <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="ניווט תקופות">
@@ -376,6 +402,11 @@
   <!-- Keyboard Shortcuts Hint -->
   <div id="kbd-hint" class="kbd-hint">
     <kbd>/</kbd> חיפוש &nbsp; <kbd>Esc</kbd> סגירה &nbsp; <kbd>G</kbd> רשת
+  </div>
+
+  <div id="app-loading" class="app-loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">טוען נתונים...</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>

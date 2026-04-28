@@ -1,12 +1,49 @@
 (function () {
   "use strict";
 
+  const focusTrap = {
+    _stack: [],
+    activate(container) {
+      const focusable = container.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const previouslyFocused = document.activeElement;
+
+      const handler = (e) => {
+        if (e.key !== "Tab") return;
+        if (focusable.length === 0) { e.preventDefault(); return; }
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      };
+
+      this._stack.push({ container, handler, previouslyFocused });
+      container.addEventListener("keydown", handler);
+      if (first) first.focus();
+    },
+    deactivate(container) {
+      const idx = this._stack.findIndex(t => t.container === container);
+      if (idx === -1) return;
+      const trap = this._stack.splice(idx, 1)[0];
+      container.removeEventListener("keydown", trap.handler);
+      if (trap.previouslyFocused && trap.previouslyFocused.focus) {
+        trap.previouslyFocused.focus();
+      }
+    }
+  };
+
   const ERAS = window.ERAS_DATA;
   const auth = window.JewsMapAuth;
   const subs = window.JewsMapSubmissions;
 
   let currentDetailEra = null;
   let currentDetailPerson = null;
+  let detailNavStack = [];
+  let activeEraFilter = null;
 
   // ── Theme ──────────────────────────────────────────────
 
@@ -66,6 +103,15 @@
       <circle cx="32" cy="24" r="12" fill="#A89882" opacity="0.6"/>
       <ellipse cx="32" cy="52" rx="18" ry="14" fill="#A89882" opacity="0.4"/>
     </svg>`;
+  }
+
+  function personAvatarInitial(person) {
+    const initial = person.nameHe ? person.nameHe.charAt(0) : "?";
+    const colors = ["#943333","#3D6E9E","#A0783C","#4E7A48","#7B52B0","#8B5E3C","#2E7D6E","#8A4570"];
+    let hash = 0;
+    for (let i = 0; i < person.id.length; i++) hash = ((hash << 5) - hash) + person.id.charCodeAt(i);
+    const color = colors[Math.abs(hash) % colors.length];
+    return `<span class="avatar-initial" style="background:${color}">${initial}</span>`;
   }
 
   // ── Family Helpers ─────────────────────────────────────
@@ -163,11 +209,13 @@
   function toggleAuthMenu() {
     authMenuOpen = !authMenuOpen;
     authMenu.classList.toggle("open", authMenuOpen);
+    authBtn.setAttribute("aria-expanded", authMenuOpen ? "true" : "false");
   }
 
   function closeAuthMenu() {
     authMenuOpen = false;
     authMenu.classList.remove("open");
+    authBtn.setAttribute("aria-expanded", "false");
   }
 
   authBtn.addEventListener("click", (e) => {
@@ -267,13 +315,28 @@
           }
         }
 
+        let richnessDots = '';
+        const hasSummary = !!person.summary;
+        const hasJourney = !!(person.lifetimeJourney && person.lifetimeJourney.length);
+        const hasSources = !!person.sources;
+        const hasMidrash = !!(person.midrash || (person.midrashJourney && person.midrashJourney.length));
+        if (hasSummary || hasJourney || hasSources || hasMidrash) {
+          richnessDots = '<div class="card-richness">';
+          if (hasSummary) richnessDots += '<span class="richness-dot richness-summary" title="סיכום"></span>';
+          if (hasJourney) richnessDots += '<span class="richness-dot richness-journey" title="מסע חיים"></span>';
+          if (hasMidrash) richnessDots += '<span class="richness-dot richness-midrash" title="מדרש"></span>';
+          if (hasSources) richnessDots += '<span class="richness-dot richness-sources" title="מקורות"></span>';
+          richnessDots += '</div>';
+        }
+
         card.innerHTML = `
-          <div class="card-avatar">${personAvatarSVG()}</div>
+          <div class="card-avatar">${personAvatarInitial(person)}</div>
           <div class="card-name">${person.nameHe}</div>
           ${lineageHTML}
           <div class="card-years">${birthStr} – ${deathStr}</div>
           <div class="card-years-ce">${ceStr}</div>
           ${badgeHTML}
+          ${richnessDots}
         `;
 
         card.addEventListener("click", () => openDetail(era, person));
@@ -408,6 +471,15 @@
 
     updateMobileNav(activeEraIdx);
     animateCards();
+
+    const searchFab = document.getElementById("search-fab");
+    if (searchFab) {
+      const heroEl = document.getElementById("hero-landing");
+      if (heroEl) {
+        const heroBottom = heroEl.getBoundingClientRect().bottom;
+        searchFab.classList.toggle("visible", heroBottom < 0);
+      }
+    }
   }
 
   // ── Card Entrance Animation ────────────────────────────
@@ -524,7 +596,10 @@
   const detailBackdrop = document.getElementById("detail-backdrop");
   const detailClose = document.getElementById("detail-close");
 
-  function openDetail(era, person) {
+  function openDetail(era, person, pushToStack) {
+    if (pushToStack !== false && currentDetailPerson && currentDetailPerson.id !== person.id) {
+      detailNavStack.push({ era: currentDetailEra, person: currentDetailPerson });
+    }
     currentDetailEra = era;
     currentDetailPerson = person;
 
@@ -544,7 +619,7 @@
       badgeEl.innerHTML = "";
     }
 
-    document.getElementById("detail-avatar").innerHTML = personAvatarSVG();
+    document.getElementById("detail-avatar").innerHTML = personAvatarInitial(currentDetailPerson || person);
 
     renderFamilyConnections(person);
 
@@ -580,34 +655,96 @@
 
     renderLifetimeJourney(person);
 
-    document.querySelectorAll(".detail-tab").forEach((t) => t.classList.remove("active"));
+    document.querySelectorAll(".detail-tab").forEach((t) => {
+      t.classList.remove("active");
+      t.setAttribute("aria-selected", "false");
+    });
     document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
-    document.querySelector('.detail-tab[data-tab="summary"]').classList.add("active");
+    const summaryTabBtn = document.querySelector('.detail-tab[data-tab="summary"]');
+    summaryTabBtn.classList.add("active");
+    summaryTabBtn.setAttribute("aria-selected", "true");
     summaryPane.classList.add("active");
 
     exitEditMode();
     renderRelatedFigures(person, era);
     updateBookmarkUI();
     showBreadcrumb(person.nameHe);
+    const detailBack = document.getElementById("detail-back");
+    const detailBackLabel = document.getElementById("detail-back-label");
+    if (detailBack) {
+      if (detailNavStack.length > 0) {
+        const prev = detailNavStack[detailNavStack.length - 1];
+        detailBackLabel.textContent = prev.person.nameHe;
+        detailBack.style.display = "";
+      } else {
+        detailBack.style.display = "none";
+      }
+    }
     wireJourneyLinks(document.getElementById("tab-summary"));
 
     detailBackdrop.classList.add("open");
     detailPanel.classList.add("open");
+    focusTrap.activate(detailPanel);
     document.body.style.overflow = "hidden";
   }
 
   function closeDetail() {
+    focusTrap.deactivate(detailPanel);
+    detailPanel.style.transform = "";
     detailPanel.classList.remove("open");
     detailBackdrop.classList.remove("open");
     document.body.style.overflow = "";
     currentDetailEra = null;
     currentDetailPerson = null;
+    detailNavStack = [];
     exitEditMode();
     hideBreadcrumb();
   }
 
+  function goBackDetail() {
+    if (detailNavStack.length === 0) return;
+    const prev = detailNavStack.pop();
+    openDetail(prev.era, prev.person, false);
+  }
+
   detailClose.addEventListener("click", closeDetail);
   detailBackdrop.addEventListener("click", closeDetail);
+  const detailBackBtn = document.getElementById("detail-back");
+  if (detailBackBtn) detailBackBtn.addEventListener("click", goBackDetail);
+
+  let touchStartY = 0;
+  let touchCurrentY = 0;
+  let isDragging = false;
+
+  detailPanel.addEventListener("touchstart", (e) => {
+    if (detailPanel.scrollTop > 5) return;
+    touchStartY = e.touches[0].clientY;
+    isDragging = true;
+    detailPanel.style.transition = "none";
+  }, { passive: true });
+
+  detailPanel.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    touchCurrentY = e.touches[0].clientY;
+    const dy = touchCurrentY - touchStartY;
+    if (dy > 0) {
+      detailPanel.style.transform = `translateY(${dy}px)`;
+    }
+  }, { passive: true });
+
+  detailPanel.addEventListener("touchend", () => {
+    if (!isDragging) return;
+    isDragging = false;
+    detailPanel.style.transition = "";
+    const dy = touchCurrentY - touchStartY;
+    if (dy > 100) {
+      closeDetail();
+    } else {
+      detailPanel.style.transform = "";
+    }
+    touchStartY = 0;
+    touchCurrentY = 0;
+  });
 
   document.querySelectorAll(".detail-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -619,9 +756,13 @@
         return;
       }
 
-      document.querySelectorAll(".detail-tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".detail-tab").forEach((t) => {
+        t.classList.remove("active");
+        t.setAttribute("aria-selected", "false");
+      });
       document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
       tab.classList.add("active");
+      tab.setAttribute("aria-selected", "true");
       document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
     });
   });
@@ -1095,10 +1236,12 @@
 
     if (!ftreeWindow.classList.contains("open")) {
       ftreeWindow.classList.add("open");
+      focusTrap.activate(ftreeWindow);
     }
   }
 
   function closeFamilyTreeWindow() {
+    focusTrap.deactivate(ftreeWindow);
     ftreeWindow.classList.remove("open");
     ftreeWindowBody.innerHTML = '';
     ftreeWindowBody.dataset.currentPersonId = '';
@@ -1182,9 +1325,13 @@
 
   contribTabs.forEach(tab => {
     tab.addEventListener("click", () => {
-      contribTabs.forEach(t => t.classList.remove("active"));
+      contribTabs.forEach(t => {
+        t.classList.remove("active");
+        t.setAttribute("aria-selected", "false");
+      });
       contribPanes.forEach(p => p.classList.remove("active"));
       tab.classList.add("active");
+      tab.setAttribute("aria-selected", "true");
       activeContribType = tab.dataset.ctype;
 
       const paneMap = { edit_person: "contrib-edit", add_source: "contrib-source", add_note: "contrib-note" };
@@ -1200,9 +1347,13 @@
     document.getElementById("contrib-note-text").value = '';
     document.getElementById("contrib-status").textContent = '';
 
-    contribTabs.forEach(t => t.classList.remove("active"));
+    contribTabs.forEach(t => {
+      t.classList.remove("active");
+      t.setAttribute("aria-selected", "false");
+    });
     contribPanes.forEach(p => p.classList.remove("active"));
     contribTabs[0].classList.add("active");
+    contribTabs[0].setAttribute("aria-selected", "true");
     document.getElementById("contrib-edit").classList.add("active");
     activeContribType = "edit_person";
   }
@@ -1266,6 +1417,9 @@
   const apEraSelect = document.getElementById("ap-era");
   const apNameHe = document.getElementById("ap-name-he");
   const apNameEn = document.getElementById("ap-name-en");
+  let fatherAC = null;
+  let motherAC = null;
+  let spouseAC = null;
 
   function populateEraDropdown() {
     apEraSelect.innerHTML = '<option value="">בחר תקופה...</option>';
@@ -1282,11 +1436,13 @@
     resetAddPersonForm();
     apBackdrop.classList.add("open");
     apModal.classList.add("open");
+    focusTrap.activate(apModal);
     document.body.style.overflow = "hidden";
     setTimeout(() => apNameHe.focus(), 150);
   }
 
   function closeAddPersonModal() {
+    focusTrap.deactivate(apModal);
     apModal.classList.remove("open");
     apBackdrop.classList.remove("open");
     document.body.style.overflow = "";
@@ -1299,9 +1455,15 @@
     document.getElementById("ap-birth-year").value = "";
     document.getElementById("ap-death-year").value = "";
     document.getElementById("ap-title").value = "";
-    document.getElementById("ap-father-id").value = "";
-    document.getElementById("ap-mother-id").value = "";
-    document.getElementById("ap-spouse-ids").value = "";
+    const apFatherEl = document.getElementById("ap-father-id");
+    const apMotherEl = document.getElementById("ap-mother-id");
+    if (apFatherEl) { apFatherEl.value = ""; delete apFatherEl.dataset.selectedId; }
+    if (apMotherEl) { apMotherEl.value = ""; delete apMotherEl.dataset.selectedId; }
+    const apSpouseEl = document.getElementById("ap-spouse-ids");
+    if (apSpouseEl) { apSpouseEl.value = ""; delete apSpouseEl.dataset.selectedId; }
+    if (fatherAC) fatherAC.reset();
+    if (motherAC) motherAC.reset();
+    if (spouseAC) spouseAC.reset();
     document.getElementById("ap-summary").value = "";
     document.getElementById("ap-midrash").value = "";
     document.getElementById("ap-sources").value = "";
@@ -1346,9 +1508,16 @@
 
     const birthVal = document.getElementById("ap-birth-year").value.trim();
     const deathVal = document.getElementById("ap-death-year").value.trim();
-    const fatherVal = document.getElementById("ap-father-id").value.trim();
-    const motherVal = document.getElementById("ap-mother-id").value.trim();
-    const spousesVal = document.getElementById("ap-spouse-ids").value.trim();
+    const fatherRaw = fatherAC ? fatherAC.getSelectedIds() : document.getElementById("ap-father-id").value;
+    const motherRaw = motherAC ? motherAC.getSelectedIds() : document.getElementById("ap-mother-id").value;
+    const fatherVal = typeof fatherRaw === "string" ? fatherRaw.trim() : "";
+    const motherVal = typeof motherRaw === "string" ? motherRaw.trim() : "";
+    let spouseIdsArr = [];
+    if (spouseAC) {
+      spouseIdsArr = spouseAC.getSelectedIds();
+    } else {
+      spouseIdsArr = document.getElementById("ap-spouse-ids").value.split(",").map(s => s.trim()).filter(Boolean);
+    }
 
     const personData = {
       id: personId,
@@ -1365,9 +1534,7 @@
 
     if (fatherVal) personData.fatherId = fatherVal;
     if (motherVal) personData.motherId = motherVal;
-    if (spousesVal) {
-      personData.spouseIds = spousesVal.split(",").map(s => s.trim()).filter(Boolean);
-    }
+    if (spouseIdsArr.length > 0) personData.spouseIds = spouseIdsArr;
 
     const eraIdParsed = isNaN(Number(eraId)) ? eraId : Number(eraId);
 
@@ -1402,6 +1569,102 @@
     }
   });
 
+  function setupApAutocomplete(inputId, resultsId, multi) {
+    const input = document.getElementById(inputId);
+    const results = document.getElementById(resultsId);
+    if (!input || !results) return null;
+
+    let selectedIds = [];
+
+    function renderSpouseTags() {
+      const spouseTagsEl = document.getElementById("ap-spouse-tags");
+      if (!multi || !spouseTagsEl) return;
+      spouseTagsEl.innerHTML = selectedIds.map((id, i) => {
+        const e = findPersonById(id);
+        const name = e ? e.person.nameHe : id;
+        return `<span class="ap-tag">${name}<button type="button" class="ap-tag-remove" data-idx="${i}" aria-label="הסר">&times;</button></span>`;
+      }).join("");
+      spouseTagsEl.querySelectorAll(".ap-tag-remove").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.dataset.idx, 10);
+          selectedIds.splice(idx, 1);
+          renderSpouseTags();
+        });
+      });
+    }
+
+    input.addEventListener("input", () => {
+      const query = input.value.trim().toLowerCase();
+      if (query.length < 1) { results.classList.remove("open"); results.innerHTML = ""; return; }
+
+      const matches = [];
+      ERAS.forEach(era => {
+        era.persons.forEach(p => {
+          if (p.nameHe.toLowerCase().includes(query) || p.nameEn.toLowerCase().includes(query) || p.id.includes(query)) {
+            if (!selectedIds.includes(p.id)) matches.push(p);
+          }
+        });
+      });
+
+      if (matches.length === 0) { results.classList.remove("open"); results.innerHTML = ""; return; }
+
+      results.innerHTML = matches.slice(0, 8).map(p =>
+        `<div class="ap-autocomplete-item" data-id="${p.id}">
+        <span class="ap-autocomplete-item-name">${p.nameHe}</span>
+        <span class="ap-autocomplete-item-id">${p.id}</span>
+      </div>`
+      ).join("");
+      results.classList.add("open");
+
+      results.querySelectorAll(".ap-autocomplete-item").forEach(item => {
+        item.addEventListener("click", () => {
+          const id = item.dataset.id;
+          if (multi) {
+            selectedIds.push(id);
+            input.value = "";
+            renderSpouseTags();
+          } else {
+            input.value = item.querySelector(".ap-autocomplete-item-name").textContent;
+            input.dataset.selectedId = id;
+          }
+          results.classList.remove("open");
+          results.innerHTML = "";
+        });
+      });
+    });
+
+    input.addEventListener("blur", () => {
+      setTimeout(() => { results.classList.remove("open"); }, 200);
+    });
+
+    return {
+      getSelectedIds() {
+        if (multi) return [...selectedIds];
+        return (input.dataset.selectedId || input.value || "").trim();
+      },
+      reset() {
+        selectedIds = [];
+        input.value = "";
+        delete input.dataset.selectedId;
+        if (multi) renderSpouseTags();
+      }
+    };
+  }
+
+  fatherAC = setupApAutocomplete("ap-father-id", "ap-father-results", false);
+  motherAC = setupApAutocomplete("ap-mother-id", "ap-mother-results", false);
+  spouseAC = setupApAutocomplete("ap-spouse-ids", "ap-spouse-results", true);
+
+  const apOptionalToggle = document.getElementById("ap-optional-toggle");
+  const apOptionalFields = document.getElementById("ap-optional-fields");
+  if (apOptionalToggle && apOptionalFields) {
+    apOptionalToggle.addEventListener("click", () => {
+      const expanded = apOptionalToggle.getAttribute("aria-expanded") === "true";
+      apOptionalToggle.setAttribute("aria-expanded", !expanded);
+      apOptionalFields.style.display = expanded ? "none" : "";
+    });
+  }
+
   // ── Search ─────────────────────────────────────────────
 
   const searchToggle = document.getElementById("search-toggle");
@@ -1423,6 +1686,7 @@
 
   function openSearch() {
     searchOverlay.classList.add("open");
+    focusTrap.activate(searchOverlay);
     searchInput.value = "";
     searchResults.innerHTML = "";
     activeSearchFilter = "all";
@@ -1437,14 +1701,19 @@
 
     setTimeout(() => searchInput.focus(), 100);
     document.body.style.overflow = "hidden";
+    searchToggle.setAttribute("aria-expanded", "true");
   }
 
   function closeSearch() {
+    focusTrap.deactivate(searchOverlay);
     searchOverlay.classList.remove("open");
     document.body.style.overflow = "";
+    searchToggle.setAttribute("aria-expanded", "false");
   }
 
   searchToggle.addEventListener("click", openSearch);
+  const searchFab = document.getElementById("search-fab");
+  if (searchFab) searchFab.addEventListener("click", openSearch);
   searchCloseBtn.addEventListener("click", closeSearch);
 
   let activeSearchFilter = "all";
@@ -1470,7 +1739,7 @@
     if (!filtersDiv) {
       filtersDiv = document.createElement("div");
       filtersDiv.className = "search-filters";
-      searchInput.parentNode.insertBefore(filtersDiv, searchResults);
+      searchResults.parentNode.insertBefore(filtersDiv, searchResults);
     }
     filtersDiv.innerHTML = "";
     getSearchFilters().forEach(f => {
@@ -1618,10 +1887,49 @@
 
   // ── Era Carousel ──────────────────────────────────────
 
+  function filterEra(eraIdx) {
+    activeEraFilter = eraIdx;
+
+    const carouselCards = document.querySelectorAll(".era-carousel-card");
+    carouselCards.forEach((c, i) => {
+      c.classList.toggle("active", eraIdx === null ? i === 0 : i === eraIdx + 1);
+    });
+
+    eraElements.forEach((el, idx) => {
+      if (eraIdx === null) {
+        el.style.display = "";
+      } else {
+        el.style.display = idx === eraIdx ? "" : "none";
+      }
+    });
+
+    const gridSections = document.querySelectorAll(".grid-era-section");
+    gridSections.forEach((el, idx) => {
+      if (eraIdx === null) {
+        el.style.display = "";
+      } else {
+        el.style.display = idx === eraIdx ? "" : "none";
+      }
+    });
+
+    if (eraIdx !== null) {
+      const targetEl = document.getElementById("era-" + eraIdx);
+      if (targetEl) targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    setTimeout(drawTree, 200);
+  }
+
   function buildEraCarousel() {
     const track = document.getElementById("era-carousel-track");
     if (!track) return;
     track.innerHTML = "";
+
+    const allCard = document.createElement("div");
+    allCard.className = "era-carousel-card active";
+    allCard.innerHTML = `<div class="era-carousel-name">הכל</div><div class="era-carousel-years">כל התקופות</div>`;
+    allCard.addEventListener("click", () => filterEra(null));
+    track.appendChild(allCard);
 
     ERAS.forEach((era, idx) => {
       const card = document.createElement("div");
@@ -1635,10 +1943,7 @@
         <div class="era-carousel-years">${era.startYear} – ${era.endYear} שנה עברית</div>
         <div class="era-carousel-count">${era.persons.length} דמויות</div>
       `;
-      card.addEventListener("click", () => {
-        const el = document.getElementById("era-" + idx);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+      card.addEventListener("click", () => filterEra(idx));
       card.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -1646,6 +1951,15 @@
         }
       });
       track.appendChild(card);
+    });
+
+    allCard.setAttribute("tabindex", "0");
+    allCard.setAttribute("role", "button");
+    allCard.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        allCard.click();
+      }
     });
   }
 
@@ -1840,10 +2154,14 @@
   function openBookmarksPanel() {
     renderBookmarksList();
     bookmarksPanel.classList.add("open");
+    focusTrap.activate(bookmarksPanel);
+    bookmarksToggle.setAttribute("aria-expanded", "true");
   }
 
   function closeBookmarksPanel() {
+    focusTrap.deactivate(bookmarksPanel);
     bookmarksPanel.classList.remove("open");
+    bookmarksToggle.setAttribute("aria-expanded", "false");
   }
 
   if (bookmarksToggle) bookmarksToggle.addEventListener("click", (e) => {
@@ -2082,8 +2400,31 @@
     initHero();
     buildEraCarousel();
     buildMobileNav();
+    if (window.innerWidth <= 768) {
+      switchView("grid");
+    }
     buildSearchFilters();
     checkUrlForPerson();
+
+    const hudTooltipKey = "seder-hadorot-hud-seen";
+    if (!localStorage.getItem(hudTooltipKey)) {
+      const hudTooltip = document.getElementById("hud-tooltip");
+      if (hudTooltip) {
+        setTimeout(() => {
+          hudTooltip.classList.add("visible");
+          setTimeout(() => {
+            hudTooltip.classList.remove("visible");
+            localStorage.setItem(hudTooltipKey, "1");
+          }, 5000);
+        }, 2000);
+      }
+    }
+
+    const appLoading = document.getElementById("app-loading");
+    if (appLoading) {
+      appLoading.classList.add("hidden");
+      setTimeout(() => appLoading.remove(), 500);
+    }
   }
 
   initApp();
