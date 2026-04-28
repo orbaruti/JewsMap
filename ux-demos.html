@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UX Redesign Demos — Seder HaDorot</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B0A14;
+  --bg-raised: #12101F;
+  --bg-card: #1A1730;
+  --gold: #D4B896;
+  --gold-dim: #8B7A5A;
+  --gold-glow: rgba(212,184,150,0.25);
+  --text: #EDE4D4;
+  --text-muted: #7B7490;
+  --accent: #5B9BD5;
+  --accent2: #E8916D;
+  --border: #2E2A45;
+  --prophet: #3D6E9E;
+  --tzadik: #A0783C;
+  --king: #943333;
+  --judge: #4E7A48;
+  --radius: 14px;
+  --font-display: 'Frank Ruhl Libre', serif;
+  --font-body: 'Heebo', sans-serif;
+  --font-elegant: 'Cormorant Garamond', serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.demo-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(11,10,20,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 20px;
+}
+.demo-nav-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  padding: 14px 20px 14px 0;
+  border-left: 1px solid var(--border);
+  white-space: nowrap;
+}
+.demo-nav-tabs {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  flex: 1;
+}
+.demo-tab {
+  padding: 14px 20px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.demo-tab:hover { color: var(--text); }
+.demo-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.demo-section {
+  display: none;
+  animation: fadeUp 0.4s ease;
+}
+.demo-section.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+  padding: 48px 40px 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.section-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+.badge-problem { background: rgba(232,145,109,0.15); color: var(--accent2); border: 1px solid rgba(232,145,109,0.3); }
+.badge-solution { background: rgba(91,155,213,0.15); color: var(--accent); border: 1px solid rgba(91,155,213,0.3); }
+.badge-demo { background: rgba(212,184,150,0.15); color: var(--gold); border: 1px solid rgba(212,184,150,0.3); }
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+.section-desc {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  max-width: 700px;
+}
+
+.demo-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+}
+
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+.comparison-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.comparison-label {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+}
+.label-before { color: var(--accent2); background: rgba(232,145,109,0.06); }
+.label-after { color: var(--accent); background: rgba(91,155,213,0.06); }
+.comparison-body { padding: 20px; }
+
+/* ONBOARDING DEMO */
+.onboarding-demo {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.onboarding-hero {
+  position: relative;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 32px;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(212,184,150,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(91,155,213,0.06) 0%, transparent 50%),
+    var(--bg);
+  overflow: hidden;
+}
+.hero-ornament {
+  width: 48px; height: 48px;
+  border: 2px solid var(--gold-dim);
+  transform: rotate(45deg);
+  margin-bottom: 24px;
+  opacity: 0.5;
+  animation: spinSlow 20s linear infinite;
+}
+@keyframes spinSlow { to { transform: rotate(405deg); } }
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+.hero-subtitle {
+  font-family: var(--font-elegant);
+  font-size: 22px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-bottom: 32px;
+  font-style: italic;
+}
+.hero-cta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.btn-primary {
+  padding: 14px 32px;
+  background: var(--gold);
+  color: var(--bg);
+  border: none;
+  border-radius: 28px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: 0 4px 20px var(--gold-glow);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--gold-glow); }
+.btn-secondary {
+  padding: 14px 28px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.btn-secondary:hover { border-color: var(--gold-dim); color: var(--text); }
+
+.hero-stats {
+  display: flex; gap: 40px; margin-top: 40px;
+  padding-top: 32px; border-top: 1px solid var(--border);
+}
+.stat { text-align: center; }
+.stat-num { font-family: var(--font-display); font-size: 28px; font-weight: 900; color: var(--gold); }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+.era-carousel {
+  padding: 32px 24px;
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border);
+}
+.carousel-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-right: 8px;
+}
+.carousel-track {
+  display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px;
+  scroll-snap-type: x mandatory;
+}
+.carousel-track::-webkit-scrollbar { height: 4px; }
+.carousel-track::-webkit-scrollbar-track { background: var(--bg); border-radius: 2px; }
+.carousel-track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.era-card {
+  flex-shrink: 0; width: 200px; padding: 18px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; cursor: pointer; transition: all 0.3s;
+  scroll-snap-align: start; position: relative; overflow: hidden;
+}
+.era-card::before {
+  content: '';
+  position: absolute; top: 0; right: 0; width: 60px; height: 60px;
+  background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.era-card:hover::before { opacity: 1; }
+.era-card:hover { border-color: var(--gold-dim); transform: translateY(-4px); }
+
+.era-card-num {
+  font-family: var(--font-display); font-size: 36px; font-weight: 900;
+  color: var(--gold); opacity: 0.3; line-height: 1; margin-bottom: 8px;
+}
+.era-card-title {
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  color: var(--text); margin-bottom: 6px; line-height: 1.3;
+}
+.era-card-meta { font-size: 11px; color: var(--text-muted); }
+.era-card-count {
+  display: inline-block; font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 10px;
+  background: rgba(212,184,150,0.1); color: var(--gold-dim);
+  border: 1px solid rgba(212,184,150,0.15); margin-top: 8px;
+}
+
+/* NAV DEMO */
+.nav-demo {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.nav-demo-toolbar {
+  display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+  background: var(--bg-card); border-bottom: 1px solid var(--border);
+}
+.nd-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.nd-bc-item { color: var(--text-muted); cursor: pointer; transition: color 0.2s; }
+.nd-bc-item:hover { color: var(--gold); }
+.nd-bc-sep { color: var(--border); font-size: 11px; }
+.nd-bc-active { color: var(--text); font-weight: 600; }
+
+.nav-demo-body { display: grid; grid-template-columns: 220px 1fr; min-height: 500px; }
+.nd-sidebar { border-left: 1px solid var(--border); padding: 16px 0; background: var(--bg); }
+.nd-sidebar-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted); padding: 0 16px 12px;
+}
+.nd-era-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+  cursor: pointer; transition: all 0.2s; border-right: 3px solid transparent;
+  font-size: 13px; color: var(--text-muted);
+}
+.nd-era-item:hover { background: rgba(212,184,150,0.04); color: var(--text); }
+.nd-era-item.active {
+  background: rgba(212,184,150,0.08); color: var(--gold);
+  border-right-color: var(--gold); font-weight: 600;
+}
+.nd-era-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--border);
+  flex-shrink: 0; transition: background 0.2s;
+}
+.nd-era-item.active .nd-era-dot { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.nd-era-count { margin-right: auto; font-size: 11px; opacity: 0.6; }
+
+.nd-content { padding: 24px; }
+.nd-era-header { text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.nd-era-title { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.nd-era-subtitle { font-size: 13px; color: var(--text-muted); }
+.nd-era-range {
+  display: inline-block; margin-top: 8px; font-size: 12px; color: var(--gold-dim);
+  padding: 4px 14px; border: 1px solid var(--border); border-radius: 20px;
+}
+
+.nd-persons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+.nd-person-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.3s; text-align: center;
+}
+.nd-person-card:hover {
+  border-color: var(--gold-dim); transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 12px var(--gold-glow);
+}
+.nd-person-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--border);
+  margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 18px; font-weight: 900; color: var(--gold-dim);
+}
+.nd-person-card:hover .nd-person-avatar { border-color: var(--gold); }
+.nd-person-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.nd-person-years { font-size: 11px; color: var(--text-muted); direction: ltr; unicode-bidi: embed; }
+.nd-person-badge {
+  display: inline-block; font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 8px; margin-top: 6px; color: #fff;
+}
+
+/* DETAIL DEMO */
+.detail-demo {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  display: grid; grid-template-columns: 1fr 440px; min-height: 620px;
+}
+.dd-context {
+  padding: 40px 32px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  background: var(--bg); border-left: 1px solid var(--border);
+}
+.dd-context-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.dd-context-title { font-family: var(--font-display); font-size: 20px; color: var(--gold); margin-bottom: 16px; }
+.dd-context-desc { font-size: 13px; color: var(--text-muted); max-width: 300px; line-height: 1.6; }
+.dd-changes { margin-top: 24px; text-align: right; width: 100%; max-width: 320px; }
+.dd-change-item {
+  padding: 8px 12px; font-size: 12px; color: var(--text-muted); line-height: 1.5;
+  border-right: 2px solid var(--accent); margin-bottom: 6px;
+  background: rgba(91,155,213,0.05); border-radius: 0 8px 8px 0;
+}
+.dd-change-item strong { color: var(--text); }
+
+.dd-panel { padding: 0; overflow-y: auto; max-height: 620px; }
+.dd-panel-header { position: sticky; top: 0; z-index: 2; padding: 24px 24px 0; background: var(--bg-raised); }
+.dd-avatar-row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.dd-big-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 3px solid var(--gold); background: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 28px; font-weight: 900;
+  color: var(--gold); box-shadow: 0 0 20px var(--gold-glow); flex-shrink: 0;
+}
+.dd-name-block { flex: 1; padding-top: 6px; }
+.dd-name-he { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.dd-name-en { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.dd-years-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.dd-year-tag { font-size: 13px; color: var(--gold); font-weight: 600; }
+.dd-year-sep { color: var(--border); }
+.dd-year-ce { font-size: 12px; color: var(--text-muted); }
+.dd-badge-tag {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 8px; color: #fff; margin-top: 6px;
+}
+
+.dd-quick-family {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 24px;
+  padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+}
+.dd-family-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; padding: 4px 10px; border-radius: 20px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text); cursor: pointer; transition: all 0.2s;
+}
+.dd-family-chip:hover { border-color: var(--gold-dim); color: var(--gold); }
+.dd-chip-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+
+.dd-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  margin: 0 24px; overflow-x: auto;
+}
+.dd-tab {
+  padding: 12px 16px; font-size: 13px; font-weight: 600;
+  color: var(--text-muted); background: none; border: none;
+  border-bottom: 2px solid transparent; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+}
+.dd-tab:hover { color: var(--text); }
+.dd-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.dd-tab-content { padding: 20px 24px 32px; }
+.dd-summary-text { font-size: 14px; line-height: 1.8; color: var(--text); }
+.dd-related-box {
+  margin-top: 20px; padding: 14px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.dd-related-title { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; }
+.dd-related-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.dd-journey-beat {
+  padding: 14px; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; margin-bottom: 10px;
+}
+.dd-beat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.dd-beat-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--gold); flex-shrink: 0;
+}
+.dd-beat-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text); }
+.dd-beat-source { font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+.dd-beat-text { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+/* SEARCH DEMO */
+.search-demo { background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.search-demo-header {
+  padding: 40px 32px; text-align: center;
+  background: radial-gradient(ellipse at 50% 100%, rgba(212,184,150,0.06) 0%, transparent 60%), var(--bg);
+}
+.search-demo-title { font-family: var(--font-display); font-size: 20px; color: var(--text); margin-bottom: 20px; }
+.search-box { width: 100%; max-width: 500px; margin: 0 auto; position: relative; }
+.search-input-demo {
+  width: 100%; padding: 16px 48px 16px 20px;
+  font-family: var(--font-display); font-size: 18px;
+  background: var(--bg-card); border: 1px solid var(--gold-dim);
+  border-radius: 12px; color: var(--text); outline: none; direction: rtl;
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+.search-icon {
+  position: absolute; top: 50%; left: 16px; transform: translateY(-50%); color: var(--text-muted);
+}
+
+.search-filters { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+.search-filter {
+  padding: 6px 14px; font-size: 12px; font-weight: 600;
+  color: var(--text-muted); background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 20px;
+  cursor: pointer; transition: all 0.2s;
+}
+.search-filter:hover { border-color: var(--gold-dim); color: var(--text); }
+.search-filter.active { background: rgba(212,184,150,0.12); border-color: var(--gold-dim); color: var(--gold); }
+
+.search-results-demo { padding: 24px 32px; }
+.sr-group-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted);
+  margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.sr-item {
+  display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+}
+.sr-item:hover { border-color: var(--gold-dim); background: rgba(26,23,48,0.8); }
+.sr-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 16px; font-weight: 900;
+  color: var(--gold-dim); flex-shrink: 0;
+}
+.sr-info { flex: 1; min-width: 0; }
+.sr-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text); }
+.sr-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.sr-era-tag {
+  font-size: 10px; padding: 3px 8px; border-radius: 6px;
+  background: rgba(91,155,213,0.12); border: 1px solid rgba(91,155,213,0.25);
+  color: var(--accent); white-space: nowrap;
+}
+
+/* ISSUES */
+.issues-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 32px; }
+.issue-card { padding: 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+.issue-severity {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 2px 8px; border-radius: 6px; margin-bottom: 8px;
+}
+.sev-critical { background: rgba(200,50,50,0.15); color: #E55; border: 1px solid rgba(200,50,50,0.25); }
+.sev-high { background: rgba(232,145,109,0.15); color: var(--accent2); border: 1px solid rgba(232,145,109,0.25); }
+.sev-medium { background: rgba(212,184,150,0.15); color: var(--gold); border: 1px solid rgba(212,184,150,0.25); }
+.issue-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.issue-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+/* ROADMAP */
+.roadmap-phase { margin-bottom: 28px; }
+.roadmap-phase-title {
+  font-family: var(--font-display); font-size: 16px; font-weight: 700;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.roadmap-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.dot-red { background: #E55; }
+.dot-orange { background: var(--accent2); }
+.dot-blue { background: var(--accent); }
+.roadmap-items {
+  display: flex; flex-direction: column; gap: 6px;
+  padding-right: 18px; border-right: 2px solid var(--border); margin-right: 4px;
+}
+.roadmap-item {
+  font-size: 13px; color: var(--text-muted); padding: 8px 14px;
+  background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); line-height: 1.6;
+}
+.roadmap-item strong { color: var(--text); }
+
+@media (max-width: 768px) {
+  .comparison { grid-template-columns: 1fr; }
+  .detail-demo { grid-template-columns: 1fr; }
+  .nav-demo-body { grid-template-columns: 1fr; }
+  .nd-sidebar { display: none; }
+  .section-header { padding: 32px 20px 24px; }
+  .demo-container { padding: 0 20px 40px; }
+  .section-title { font-size: 24px; }
+  .hero-title { font-size: 36px; }
+  .dd-context { display: none; }
+  .detail-demo { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="demo-nav">
+  <div class="demo-nav-title">UX Redesign</div>
+  <div class="demo-nav-tabs">
+    <button class="demo-tab active" data-section="overview">Issues & Audit</button>
+    <button class="demo-tab" data-section="demo1">Landing & Onboarding</button>
+    <button class="demo-tab" data-section="demo2">Navigation</button>
+    <button class="demo-tab" data-section="demo3">Person Detail</button>
+    <button class="demo-tab" data-section="demo4">Search & Discovery</button>
+    <button class="demo-tab" data-section="roadmap">Roadmap</button>
+  </div>
+</nav>
+
+<!-- OVERVIEW -->
+<section id="sec-overview" class="demo-section active">
+  <div class="section-header">
+    <span class="section-badge badge-problem">UX AUDIT</span>
+    <h2 class="section-title">Main UX Problems Identified</h2>
+    <p class="section-desc">After analyzing every screen, flow, and interaction in Seder HaDorot, these are the critical issues affecting user experience, engagement, and retention.</p>
+  </div>
+  <div class="demo-container">
+    <div class="issues-grid">
+      <div class="issue-card">
+        <span class="issue-severity sev-critical">Critical</span>
+        <div class="issue-title">No Onboarding or Context</div>
+        <div class="issue-desc">Users land directly on a long scroll with no explanation of what this is, what they can do, or where to start. High bounce risk for first-time visitors.</div>
+      </div>
+      <div class="issue-card">
+        <span class="issue-severity sev-critical">Critical</span>
+        <div class="issue-title">Scroll-Only Navigation</div>
+        <div class="issue-desc">The only way to explore is endless vertical scroll. Era dots are 10px, easy to miss. No filtering, no grid view, no way to jump to specific content types.</div>
+      </div>
+      <div class="issue-card">
+        <span class="issue-severity sev-high">High</span>
+        <div class="issue-title">Detail Panel Overloaded</div>
+        <div class="issue-desc">6 tabs crammed into a 400px slide-in panel. Content hierarchy is flat. Family tree requires a separate floating window — disorienting context switch.</div>
+      </div>
+      <div class="issue-card">
+        <span class="issue-severity sev-high">High</span>
+        <div class="issue-title">Search Is Too Basic</div>
+        <div class="issue-desc">Search only matches names. No filtering by era, role, or relationship. Results just scroll to a card — no preview, no context, no related suggestions.</div>
+      </div>
+      <div class="issue-card">
+        <span class="issue-severity sev-high">High</span>
+        <div class="issue-title">Mobile Experience Broken</div>
+        <div class="issue-desc">On mobile: sidebar and era dots disappear entirely, cards stack in single column with no tree visual. The timeline metaphor collapses.</div>
+      </div>
+      <div class="issue-card">
+        <span class="issue-severity sev-medium">Medium</span>
+        <div class="issue-title">Empty States Everywhere</div>
+        <div class="issue-desc">Most tabs show italic placeholder text ("content will be filled later"). This erodes trust and makes the product feel incomplete and unreliable.</div>
+      </div>
+      <div class="issue-card">
+        <span class="issue-severity sev-medium">Medium</span>
+        <div class="issue-title">No Cross-Linking or Discovery</div>
+        <div class="issue-desc">After viewing a person, there's no "related figures" or "same era" suggestions. Users must manually navigate back and hunt for connections.</div>
+      </div>
+      <div class="issue-card">
+        <span class="issue-severity sev-medium">Medium</span>
+        <div class="issue-title">Accessibility Gaps</div>
+        <div class="issue-desc">No skip-to-content link, no ARIA landmarks, no focus management on panel open/close, low contrast on muted text, tiny era dot touch targets (10px).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO 1: LANDING -->
+<section id="sec-demo1" class="demo-section">
+  <div class="section-header">
+    <span class="section-badge badge-demo">DEMO 1</span>
+    <h2 class="section-title">Landing & Onboarding Experience</h2>
+    <p class="section-desc">Replace the bare scroll-into-timeline with a purposeful hero section that explains the product, sets expectations, and gives users multiple entry points into the content.</p>
+  </div>
+  <div class="demo-container">
+    <div class="comparison" style="margin-bottom: 32px;">
+      <div class="comparison-card">
+        <div class="comparison-label label-before">CURRENT: No landing</div>
+        <div class="comparison-body">
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7;">Users see the title "סדר הדורות" and immediately face a long vertical scroll. No context, no CTA, no way to understand what they're looking at or how to use it. The first visible content depends entirely on scroll position.</p>
+        </div>
+      </div>
+      <div class="comparison-card">
+        <div class="comparison-label label-after">PROPOSED: Hero + Era Carousel</div>
+        <div class="comparison-body">
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7;">A hero section with value proposition, key stats, and clear CTAs. Below it, an era carousel lets users pick their entry point. The scroll timeline begins after — users arrive with context and intent.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="onboarding-demo">
+      <div class="onboarding-hero">
+        <div class="hero-ornament"></div>
+        <h1 class="hero-title">סדר הדורות</h1>
+        <p class="hero-subtitle">The Order of Generations — from Adam to the Judges</p>
+        <p style="max-width: 500px; font-size: 15px; color: var(--text-muted); line-height: 1.7; margin-bottom: 28px;">Explore the family tree of Jewish tradition. Discover biblical figures, their stories, sources, and family connections across thousands of years of history.</p>
+        <div class="hero-cta">
+          <button class="btn-primary" onclick="switchTab('demo2')">Start Exploring →</button>
+          <button class="btn-secondary" onclick="switchTab('demo4')">Search a Figure</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><div class="stat-num">8</div><div class="stat-label">Historical Eras</div></div>
+          <div class="stat"><div class="stat-num">120+</div><div class="stat-label">Biblical Figures</div></div>
+          <div class="stat"><div class="stat-num">4,000</div><div class="stat-label">Years of History</div></div>
+        </div>
+      </div>
+
+      <div class="era-carousel">
+        <div class="carousel-title">בחרו תקופה להתחיל:</div>
+        <div class="carousel-track">
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">01</div>
+            <div class="era-card-title">עשרה דורות מאדם עד נח</div>
+            <div class="era-card-meta">0 – 2006 שנה עברית</div>
+            <div class="era-card-count">38 דמויות</div>
+          </div>
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">02</div>
+            <div class="era-card-title">עשרה דורות מנח עד אברהם</div>
+            <div class="era-card-meta">1056 – 2123</div>
+            <div class="era-card-count">28 דמויות</div>
+          </div>
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">03</div>
+            <div class="era-card-title">תקופת האבות</div>
+            <div class="era-card-meta">1948 – 2332</div>
+            <div class="era-card-count">24 דמויות</div>
+          </div>
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">04</div>
+            <div class="era-card-title">שבטי ישראל</div>
+            <div class="era-card-meta">2200 – 2332</div>
+            <div class="era-card-count">16 דמויות</div>
+          </div>
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">05</div>
+            <div class="era-card-title">ירידה למצרים</div>
+            <div class="era-card-meta">2238 – 2448</div>
+            <div class="era-card-count">14 דמויות</div>
+          </div>
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">06</div>
+            <div class="era-card-title">יציאת מצרים</div>
+            <div class="era-card-meta">2448 – 2488</div>
+            <div class="era-card-count">12 דמויות</div>
+          </div>
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">07</div>
+            <div class="era-card-title">דור המדבר</div>
+            <div class="era-card-meta">2448 – 2488</div>
+            <div class="era-card-count">10 דמויות</div>
+          </div>
+          <div class="era-card" onclick="switchTab('demo2')">
+            <div class="era-card-num">08</div>
+            <div class="era-card-title">תקופת השופטים</div>
+            <div class="era-card-meta">2516 – 2870</div>
+            <div class="era-card-count">8 דמויות</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO 2: NAVIGATION -->
+<section id="sec-demo2" class="demo-section">
+  <div class="section-header">
+    <span class="section-badge badge-demo">DEMO 2</span>
+    <h2 class="section-title">Era-Based Navigation + Grid View</h2>
+    <p class="section-desc">Replace infinite scroll with an era-focused layout. Users pick an era from a persistent sidebar, then see all figures in a scannable grid. Breadcrumbs show context. This eliminates the "where am I?" problem and makes browsing intentional.</p>
+  </div>
+  <div class="demo-container">
+    <div class="nav-demo">
+      <div class="nav-demo-toolbar">
+        <div class="nd-breadcrumb">
+          <span class="nd-bc-item">בית</span>
+          <span class="nd-bc-sep">&#x276E;</span>
+          <span class="nd-bc-active">עשרה דורות מאדם עד נח</span>
+        </div>
+      </div>
+      <div class="nav-demo-body">
+        <div class="nd-sidebar">
+          <div class="nd-sidebar-title">ERAS</div>
+          <div class="nd-era-item active"><div class="nd-era-dot"></div><span>אדם עד נח</span><span class="nd-era-count">38</span></div>
+          <div class="nd-era-item"><div class="nd-era-dot"></div><span>נח עד אברהם</span><span class="nd-era-count">28</span></div>
+          <div class="nd-era-item"><div class="nd-era-dot"></div><span>תקופת האבות</span><span class="nd-era-count">24</span></div>
+          <div class="nd-era-item"><div class="nd-era-dot"></div><span>שבטי ישראל</span><span class="nd-era-count">16</span></div>
+          <div class="nd-era-item"><div class="nd-era-dot"></div><span>ירידה למצרים</span><span class="nd-era-count">14</span></div>
+          <div class="nd-era-item"><div class="nd-era-dot"></div><span>יציאת מצרים</span><span class="nd-era-count">12</span></div>
+          <div class="nd-era-item"><div class="nd-era-dot"></div><span>דור המדבר</span><span class="nd-era-count">10</span></div>
+          <div class="nd-era-item"><div class="nd-era-dot"></div><span>תקופת השופטים</span><span class="nd-era-count">8</span></div>
+        </div>
+        <div class="nd-content">
+          <div class="nd-era-header">
+            <h3 class="nd-era-title">עשרה דורות מאדם עד נח</h3>
+            <p class="nd-era-subtitle">Ten Generations from Adam to Noah</p>
+            <span class="nd-era-range">0 – 2006 שנה עברית (3760 BCE – 1754 BCE)</span>
+          </div>
+          <div class="nd-persons-grid">
+            <div class="nd-person-card" onclick="switchTab('demo3')"><div class="nd-person-avatar">א</div><div class="nd-person-name">אדם</div><div class="nd-person-years">1 – 930</div><div class="nd-person-badge" style="background: var(--tzadik)">צדיק</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">ח</div><div class="nd-person-name">חוה</div><div class="nd-person-years">1 – 930</div><div class="nd-person-badge" style="background: var(--gold-dim)">אם כל החי</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">ק</div><div class="nd-person-name">קין</div><div class="nd-person-years">2 – 2000</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">ה</div><div class="nd-person-name">הבל</div><div class="nd-person-years">3 – 128</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">ש</div><div class="nd-person-name">שת</div><div class="nd-person-years">130 – 1042</div><div class="nd-person-badge" style="background: var(--tzadik)">צדיק</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">א</div><div class="nd-person-name">אנוש</div><div class="nd-person-years">235 – 1140</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">ח</div><div class="nd-person-name">חנוך</div><div class="nd-person-years">622 – 987</div><div class="nd-person-badge" style="background: var(--tzadik)">צדיק</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">מ</div><div class="nd-person-name">מתושלח</div><div class="nd-person-years">687 – 1656</div><div class="nd-person-badge" style="background: var(--tzadik)">צדיק</div></div>
+            <div class="nd-person-card"><div class="nd-person-avatar">נ</div><div class="nd-person-name">נח</div><div class="nd-person-years">1056 – 2006</div><div class="nd-person-badge" style="background: var(--tzadik)">צדיק</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO 3: DETAIL -->
+<section id="sec-demo3" class="demo-section">
+  <div class="section-header">
+    <span class="section-badge badge-demo">DEMO 3</span>
+    <h2 class="section-title">Redesigned Person Detail Panel</h2>
+    <p class="section-desc">Instead of a narrow 400px slide-in with 6 confusing tabs, use a wider panel with cleaner hierarchy: identity at top, family chips for quick navigation, fewer tabs (merged sources + notes), and a "related figures" section for discovery.</p>
+  </div>
+  <div class="demo-container">
+    <div class="detail-demo">
+      <div class="dd-context">
+        <div class="dd-context-label">KEY CHANGES</div>
+        <div class="dd-context-title">What's Different</div>
+        <div class="dd-changes">
+          <div class="dd-change-item"><strong>Horizontal avatar + name</strong> — saves vertical space, feels more like a profile header</div>
+          <div class="dd-change-item"><strong>Family chips</strong> — clickable inline navigation to relatives, always visible</div>
+          <div class="dd-change-item"><strong>4 tabs instead of 6</strong> — merged Sources + Notes, family tree embedded</div>
+          <div class="dd-change-item"><strong>Related figures</strong> — discovery section at bottom drives exploration</div>
+          <div class="dd-change-item"><strong>Wider panel (440px)</strong> — more breathing room for content and family tree</div>
+        </div>
+      </div>
+      <div class="dd-panel">
+        <div class="dd-panel-header">
+          <div class="dd-avatar-row">
+            <div class="dd-big-avatar">א</div>
+            <div class="dd-name-block">
+              <div class="dd-name-he">אברהם אבינו</div>
+              <div class="dd-name-en">Avraham Avinu (Abraham)</div>
+              <div class="dd-years-row">
+                <span class="dd-year-tag">1948 – 2123</span>
+                <span class="dd-year-sep">|</span>
+                <span class="dd-year-ce">1812 BCE – 1637 BCE</span>
+              </div>
+              <div class="dd-badge-tag" style="background: var(--tzadik)">צדיק</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dd-quick-family">
+          <div class="dd-family-chip"><span class="dd-chip-label">אב:</span> תרח</div>
+          <div class="dd-family-chip"><span class="dd-chip-label">אם:</span> אמתלאי</div>
+          <div class="dd-family-chip"><span class="dd-chip-label">בת זוג:</span> שרה</div>
+          <div class="dd-family-chip"><span class="dd-chip-label">בת זוג:</span> הגר</div>
+          <div class="dd-family-chip"><span class="dd-chip-label">בן:</span> ישמעאל</div>
+          <div class="dd-family-chip"><span class="dd-chip-label">בן:</span> יצחק</div>
+        </div>
+
+        <div class="dd-tabs">
+          <button class="dd-tab active" data-dtab="summary">סיכום</button>
+          <button class="dd-tab" data-dtab="journey">מסע חיים</button>
+          <button class="dd-tab" data-dtab="midrash">מדרש</button>
+          <button class="dd-tab" data-dtab="sources">מקורות והערות</button>
+        </div>
+
+        <div class="dd-tab-content" id="dd-content-area">
+          <div id="dtab-summary" class="dd-pane" style="display:block;">
+            <div class="dd-summary-text">
+              אב האומה הישראלית; הראשון שמכיר באל אחד. עוזב חרן בציווי לך לך — מסע שמשנה את מפת ההיסטוריה. מקבל ברית מילה וברכת זרע — אב המון גויים. עוקד את יצחק בציווי נורא — מבחן אמונה עליון שנחתם בשבועה. מוריש מסורת של חסד, צדקה ומשפט לדורותיו.
+            </div>
+            <div class="dd-related-box">
+              <div class="dd-related-title">RELATED FIGURES IN THIS ERA</div>
+              <div class="dd-related-chips">
+                <div class="dd-family-chip">שרה אמנו</div>
+                <div class="dd-family-chip">לוט</div>
+                <div class="dd-family-chip">הגר</div>
+                <div class="dd-family-chip">ישמעאל</div>
+                <div class="dd-family-chip">יצחק אבינו</div>
+              </div>
+            </div>
+          </div>
+          <div id="dtab-journey" class="dd-pane" style="display:none;">
+            <div class="dd-journey-beat">
+              <div class="dd-beat-head">
+                <div class="dd-beat-num">1</div>
+                <div class="dd-beat-title">לך לך — יציאה מחרן</div>
+                <span class="dd-beat-source" style="background: rgba(61,110,158,0.15); color: var(--accent); border: 1px solid rgba(61,110,158,0.3);">תנ״ך</span>
+              </div>
+              <div class="dd-beat-text">ה' מצווה על אברם לעזוב את ארצו, מולדתו, ובית אביו. מבטיח ברכה וגוי גדול. אברם יוצא בגיל 75.</div>
+            </div>
+            <div class="dd-journey-beat">
+              <div class="dd-beat-head">
+                <div class="dd-beat-num">2</div>
+                <div class="dd-beat-title">ברית בין הבתרים</div>
+                <span class="dd-beat-source" style="background: rgba(160,120,60,0.15); color: var(--gold); border: 1px solid var(--gold-dim);">מדרש</span>
+              </div>
+              <div class="dd-beat-text">חזון נבואי של גלות וגאולה. ה' כורת ברית עם אברם ומבטיח את הארץ לזרעו.</div>
+            </div>
+            <div class="dd-journey-beat">
+              <div class="dd-beat-head">
+                <div class="dd-beat-num">3</div>
+                <div class="dd-beat-title">עקידת יצחק</div>
+                <span class="dd-beat-source" style="background: rgba(61,110,158,0.15); color: var(--accent); border: 1px solid rgba(61,110,158,0.3);">תנ״ך</span>
+              </div>
+              <div class="dd-beat-text">הניסיון העליון — עולה עם יצחק להר המוריה. מלאך ה' עוצר אותו ברגע האחרון. שבועה וברכה נצחית.</div>
+            </div>
+          </div>
+          <div id="dtab-midrash" class="dd-pane" style="display:none;">
+            <div class="dd-journey-beat">
+              <div class="dd-beat-head">
+                <div class="dd-beat-num">1</div>
+                <div class="dd-beat-title">שבירת הפסילים</div>
+                <span class="dd-beat-source" style="background: rgba(123,82,176,0.15); color: #7B52B0; border: 1px solid rgba(123,82,176,0.35);">חז״ל</span>
+              </div>
+              <div class="dd-beat-text">אברהם בחנות אביו שובר את כל הפסילים ומשאיר גרזן ביד הגדול — מוכיח את אביו שהם לא אלוהים.</div>
+            </div>
+            <div class="dd-journey-beat">
+              <div class="dd-beat-head">
+                <div class="dd-beat-num">2</div>
+                <div class="dd-beat-title">כבשן האש</div>
+                <span class="dd-beat-source" style="background: rgba(123,82,176,0.15); color: #7B52B0; border: 1px solid rgba(123,82,176,0.35);">חז״ל</span>
+              </div>
+              <div class="dd-beat-text">נמרוד מטיל את אברהם לכבשן אש על סירובו לעבוד עבודה זרה. אברהם ניצל בנס.</div>
+            </div>
+          </div>
+          <div id="dtab-sources" class="dd-pane" style="display:none;">
+            <div style="padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px;">מקורות</div>
+              <div style="font-size: 13px; color: var(--text-muted); line-height: 1.7;">בראשית יב–כה; רמב"ם הלכות עבודה זרה א; בראשית רבה לח; מדרש תנחומא</div>
+            </div>
+            <div style="padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px;">הערות</div>
+              <div style="font-size: 13px; color: var(--text-muted); line-height: 1.7; font-style: italic;">אין הערות עדיין. <span style="color: var(--gold); cursor: pointer;">הוסף הערה ←</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO 4: SEARCH -->
+<section id="sec-demo4" class="demo-section">
+  <div class="section-header">
+    <span class="section-badge badge-demo">DEMO 4</span>
+    <h2 class="section-title">Enhanced Search & Discovery</h2>
+    <p class="section-desc">The current search only matches names and scrolls to a card. The redesigned search adds role filters, era grouping, rich previews with context, and a "related figures" section — turning search into a discovery tool.</p>
+  </div>
+  <div class="demo-container">
+    <div class="search-demo">
+      <div class="search-demo-header">
+        <div class="search-demo-title">מצאו כל דמות מ-4,000 שנות היסטוריה</div>
+        <div class="search-box">
+          <input type="text" class="search-input-demo" value="אברהם" readonly>
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        </div>
+        <div class="search-filters">
+          <div class="search-filter active">הכל</div>
+          <div class="search-filter">צדיק</div>
+          <div class="search-filter">נביא</div>
+          <div class="search-filter">מלך</div>
+          <div class="search-filter">שופט</div>
+          <div class="search-filter">כהן</div>
+          <div class="search-filter">תקופה: האבות</div>
+          <div class="search-filter">תקופה: מצרים</div>
+        </div>
+      </div>
+
+      <div class="search-results-demo">
+        <div class="sr-group-title">התאמות מדויקות (1)</div>
+        <div class="sr-item" onclick="switchTab('demo3')">
+          <div class="sr-avatar">א</div>
+          <div class="sr-info">
+            <div class="sr-name">אברהם אבינו</div>
+            <div class="sr-meta">1948 – 2123 | צדיק | אב האומה הישראלית — לך לך, ברית מילה, עקידת יצחק</div>
+          </div>
+          <span class="sr-era-tag">תקופת האבות</span>
+        </div>
+
+        <div class="sr-group-title" style="margin-top: 24px;">דמויות קשורות (5)</div>
+        <div class="sr-item">
+          <div class="sr-avatar">ש</div>
+          <div class="sr-info">
+            <div class="sr-name">שרה אמנו</div>
+            <div class="sr-meta">1958 – 2085 | בת זוג של אברהם | שינוי שם: שרי → שרה</div>
+          </div>
+          <span class="sr-era-tag">תקופת האבות</span>
+        </div>
+        <div class="sr-item">
+          <div class="sr-avatar">י</div>
+          <div class="sr-info">
+            <div class="sr-name">יצחק אבינו</div>
+            <div class="sr-meta">2048 – 2228 | בן אברהם ושרה | עקידה, רבקה, יעקב ועשו</div>
+          </div>
+          <span class="sr-era-tag">תקופת האבות</span>
+        </div>
+        <div class="sr-item">
+          <div class="sr-avatar">י</div>
+          <div class="sr-info">
+            <div class="sr-name">ישמעאל</div>
+            <div class="sr-meta">2034 – 2171 | בן אברהם והגר | אבי 12 נשיאים</div>
+          </div>
+          <span class="sr-era-tag">תקופת האבות</span>
+        </div>
+        <div class="sr-item">
+          <div class="sr-avatar">ה</div>
+          <div class="sr-info">
+            <div class="sr-name">הגר</div>
+            <div class="sr-meta">שפחת שרה, בת זוג של אברהם | גורשה, מלאך במדבר</div>
+          </div>
+          <span class="sr-era-tag">תקופת האבות</span>
+        </div>
+        <div class="sr-item">
+          <div class="sr-avatar">ל</div>
+          <div class="sr-info">
+            <div class="sr-name">לוט</div>
+            <div class="sr-meta">בן אחי אברהם | סדום ועמורה, מוצא מואב ועמון</div>
+          </div>
+          <span class="sr-era-tag">תקופת האבות</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="sec-roadmap" class="demo-section">
+  <div class="section-header">
+    <span class="section-badge badge-solution">PRIORITY ROADMAP</span>
+    <h2 class="section-title">Implementation Roadmap</h2>
+    <p class="section-desc">Divided into three phases based on impact, effort, and dependency order. Phase 1 addresses the highest-impact issues that cause user drop-off.</p>
+  </div>
+  <div class="demo-container">
+    <div class="roadmap-phase">
+      <div class="roadmap-phase-title"><div class="roadmap-dot dot-red"></div> Phase 1: Must Fix Now (Week 1-2)</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item"><strong>Hero/Landing section</strong> — Add value proposition, stats, and CTA above the timeline. First-time visitors need context before content. Estimated: 4h.</div>
+        <div class="roadmap-item"><strong>Era carousel entry</strong> — Horizontal scrollable cards below hero. Click jumps to era. Reduces cognitive load and gives intentional navigation. Estimated: 3h.</div>
+        <div class="roadmap-item"><strong>Empty state upgrade</strong> — Replace italic placeholders with meaningful fallbacks: show family links, era context, or "contribute" CTA when content is missing. Estimated: 2h.</div>
+        <div class="roadmap-item"><strong>Mobile bottom navigation</strong> — Era selector as a swipeable bottom drawer or tab bar when sidebar/dots are hidden. Estimated: 4h.</div>
+        <div class="roadmap-item"><strong>Accessibility basics</strong> — Skip-to-content link, ARIA landmarks on main/aside/nav, focus trap in modals, visible focus rings, 4.5:1 contrast on muted text. Estimated: 3h.</div>
+      </div>
+    </div>
+
+    <div class="roadmap-phase">
+      <div class="roadmap-phase-title"><div class="roadmap-dot dot-orange"></div> Phase 2: Should Improve Next (Week 3-5)</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item"><strong>Grid view mode</strong> — Add era-focused grid alongside the timeline scroll. Toggle between "timeline" and "browse" modes via a toolbar button. Estimated: 6h.</div>
+        <div class="roadmap-item"><strong>Enhanced search with filters</strong> — Role chips, era tags, grouped results, related-figure suggestions, and inline preview summaries. Estimated: 5h.</div>
+        <div class="roadmap-item"><strong>Detail panel redesign</strong> — Wider panel (440px), horizontal header layout, family chips, merged Sources+Notes tab, inline family tree. Estimated: 6h.</div>
+        <div class="roadmap-item"><strong>Cross-linking & "Related Figures"</strong> — Automatic section at bottom of detail panel showing same-era figures, siblings, and people referenced in the same sources. Estimated: 4h.</div>
+        <div class="roadmap-item"><strong>Breadcrumb navigation</strong> — Show path: Home > Era > Person. Click to jump back without browser back button. Estimated: 2h.</div>
+      </div>
+    </div>
+
+    <div class="roadmap-phase">
+      <div class="roadmap-phase-title"><div class="roadmap-dot dot-blue"></div> Phase 3: Nice to Have Later (Month 2+)</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item"><strong>Interactive D3 timeline bar</strong> — Replace static sidebar with zoomable timeline showing lifespans as overlapping horizontal bars. Estimated: 8h.</div>
+        <div class="roadmap-item"><strong>First-visit tooltip tour</strong> — Guided walkthrough for new users explaining era dots, search, family trees, and contribution flow. Estimated: 4h.</div>
+        <div class="roadmap-item"><strong>Bookmarks/favorites</strong> — Save figures to a personal collection using localStorage or Supabase profiles. Estimated: 3h.</div>
+        <div class="roadmap-item"><strong>Share a figure</strong> — Shareable URLs with Open Graph metadata (title, summary, era) for social sharing. Estimated: 3h.</div>
+        <div class="roadmap-item"><strong>Comparison view</strong> — Select two figures to see side-by-side timeline, family, and events. Estimated: 6h.</div>
+        <div class="roadmap-item"><strong>Keyboard shortcuts</strong> — J/K to navigate cards, / to open search, Esc cascading close, arrow keys in family tree. Estimated: 3h.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+function switchTab(sectionId) {
+  document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.demo-section').forEach(s => s.classList.remove('active'));
+  const tab = document.querySelector(`[data-section="${sectionId}"]`);
+  if (tab) tab.classList.add('active');
+  document.getElementById('sec-' + sectionId).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.demo-tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.section));
+});
+
+document.querySelectorAll('.dd-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dd-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.dd-pane').forEach(p => p.style.display = 'none');
+    document.getElementById('dtab-' + tab.dataset.dtab).style.display = 'block';
+  });
+});
+
+document.querySelectorAll('.nd-era-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nd-era-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+
+document.querySelectorAll('.search-filter').forEach(f => {
+  f.addEventListener('click', () => {
+    if (f.textContent === 'הכל') {
+      document.querySelectorAll('.search-filter').forEach(ff => ff.classList.remove('active'));
+      f.classList.add('active');
+    } else {
+      document.querySelector('.search-filter').classList.remove('active');
+      f.classList.toggle('active');
+      if (!document.querySelector('.search-filter.active'))
+        document.querySelector('.search-filter').classList.add('active');
+    }
+  });
+});
+</script>
+</body>
+</html>
