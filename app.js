@@ -1471,6 +1471,22 @@
     });
   }
 
+  /** Same person id can appear in multiple eras in data; keep one row per id for search. */
+  function searchEntryRank(p) {
+    return (p.summary || "").length * 10000 - (p.eraIdx | 0);
+  }
+
+  function dedupeSearchByPersonId(entries) {
+    const map = new Map();
+    for (const p of entries) {
+      const id = p.id;
+      if (!map.has(id) || searchEntryRank(p) > searchEntryRank(map.get(id))) {
+        map.set(id, p);
+      }
+    }
+    return Array.from(map.values());
+  }
+
   function runSearch() {
     const q = searchInput.value.trim().toLowerCase();
     searchResults.innerHTML = "";
@@ -1484,6 +1500,9 @@
       matches = matches.filter(p => p.title && p.title.includes(activeSearchFilter));
     }
 
+    matches = dedupeSearchByPersonId(matches);
+    matches.sort((a, b) => a.nameHe.localeCompare(b.nameHe, "he"));
+
     const exact = matches.slice(0, 10);
     const relatedIds = new Set();
     exact.forEach(p => {
@@ -1494,7 +1513,9 @@
     });
     exact.forEach(p => relatedIds.delete(p.id));
 
-    const related = allPersonsFlat.filter(p => relatedIds.has(p.id)).slice(0, 8);
+    const related = dedupeSearchByPersonId(
+      allPersonsFlat.filter(p => relatedIds.has(p.id))
+    ).slice(0, 8);
 
     if (exact.length > 0) {
       const title = document.createElement("div");
